@@ -2203,6 +2203,7 @@ function checkAiReady() {
 }
 
 
+const SB_URL_KEY = 'sb_url';
 const SB_KEY_KEY = 'sb_key';
 
 function getSupabase() {
@@ -4492,6 +4493,12 @@ async function initApp() {
   const key = localStorage.getItem(SB_KEY_KEY) || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFjZmpuc2ZzZHR5YmN2dmdrZ21qIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMzODkzNDYsImV4cCI6MjA4ODk2NTM0Nn0.QveWhOqB-HE5pCmCptklenODBgSsy0Vzxs1KuJ7tcrU';
   localStorage.setItem(SB_URL_KEY, url);
   localStorage.setItem(SB_KEY_KEY, key);
+
+  // Sæt proxy URL som standard hvis ikke allerede gemt
+  if (!localStorage.getItem(PROXY_URL_KEY)) {
+    localStorage.setItem(PROXY_URL_KEY, 'https://broad-meadow-ced8.mhunderup.workers.dev');
+  }
+
   _sb = supabase.createClient(url, key);
   initApp();
 })();
