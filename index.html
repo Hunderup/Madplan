@@ -2138,12 +2138,38 @@ function saveApiKey() {
   else localStorage.removeItem(ANTHROPIC_KEY_KEY);
 
   const proxyUrl = document.getElementById('hhProxyUrlInput')?.value.trim();
-  if (proxyUrl) localStorage.setItem(PROXY_URL_KEY, proxyUrl);
-  else localStorage.removeItem(PROXY_URL_KEY);
-
-  statusEl.style.color = 'var(--moss)';
-  statusEl.textContent = '✓ Gemt';
-  setTimeout(() => statusEl.textContent = getApiKey() ? '✓ API-nøgle gemt' : (getProxyUrl() ? '✓ Proxy URL gemt' : ''), 1500);
+  if (proxyUrl) {
+    localStorage.setItem(PROXY_URL_KEY, proxyUrl);
+    // Test proxy med en minimal request
+    statusEl.style.color = 'var(--sage)';
+    statusEl.textContent = 'Tester proxy...';
+    fetchWithTimeout(proxyUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 5, messages: [{ role: 'user', content: 'Hi' }] })
+    }, 10000)
+    .then(r => r.json())
+    .then(d => {
+      if (d.content || d.type === 'message') {
+        statusEl.style.color = 'var(--moss)';
+        statusEl.textContent = '✓ Proxy virker!';
+      } else if (d.error) {
+        statusEl.style.color = 'var(--terracotta)';
+        statusEl.textContent = 'Proxy fejl: ' + (d.error.message || JSON.stringify(d.error));
+      } else {
+        statusEl.style.color = 'var(--moss)';
+        statusEl.textContent = '✓ Proxy gemt';
+      }
+    })
+    .catch(e => {
+      statusEl.style.color = 'var(--terracotta)';
+      statusEl.textContent = e.name === 'AbortError' ? 'Proxy timeout — tjek URL' : 'Proxy fejl: ' + e.message;
+    });
+  } else {
+    localStorage.removeItem(PROXY_URL_KEY);
+    statusEl.style.color = 'var(--moss)';
+    statusEl.textContent = key ? '✓ API-nøgle gemt' : '';
+  }
 }
 
 function buildApiHeaders() {
@@ -2157,6 +2183,14 @@ function buildApiHeaders() {
     'anthropic-version': '2023-06-01',
     'anthropic-dangerous-direct-browser-access': 'true'
   };
+}
+
+
+function fetchWithTimeout(url, options, ms=30000) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), ms);
+  return fetch(url, { ...options, signal: controller.signal })
+    .finally(() => clearTimeout(timer));
 }
 
 function checkAiReady() {
@@ -3753,7 +3787,7 @@ async function analysePages() {
       { type: 'image', source: { type: 'base64', media_type: p.mediaType, data: p.base64 } }
     ])).flat();
 
-    const response = await fetch(getApiEndpoint(), {
+    const response = await fetchWithTimeout(getApiEndpoint(), {
       method: 'POST',
       headers: buildApiHeaders(),
       body: JSON.stringify({
@@ -3953,7 +3987,7 @@ async function getAISuggestions() {
   });
 
   try {
-    const response = await fetch(getApiEndpoint(), {
+    const response = await fetchWithTimeout(getApiEndpoint(), {
       method: 'POST',
       headers: buildApiHeaders(),
       body: JSON.stringify({
@@ -4073,7 +4107,7 @@ Svar KUN med JSON (ingen markdown, ingen forklaring):
   "savingTips": ["tip"]
 }`;
 
-    const resp = await fetch(getApiEndpoint(), {
+    const resp = await fetchWithTimeout(getApiEndpoint(), {
       method: 'POST',
       headers: buildApiHeaders(),
       body: JSON.stringify({
@@ -4301,7 +4335,7 @@ async function getFridgeSuggestions() {
 
     userContent.push({ type: 'text', text: prompt });
 
-    const resp = await fetch(getApiEndpoint(), {
+    const resp = await fetchWithTimeout(getApiEndpoint(), {
       method: 'POST',
       headers: buildApiHeaders(),
       body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 1000, messages: [{ role: 'user', content: userContent }] })
