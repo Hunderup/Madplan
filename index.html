@@ -1103,7 +1103,40 @@
     background: var(--light-sage);
   }
 
-  /* Make day cards taller to fit optional meals */
+  /* Shopping toolbar */
+  .shop-toolbar {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+
+  .shop-tool-btn {
+    background: var(--warm-white);
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    padding: 7px 12px;
+    font-size: 13px;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    transition: all 0.15s;
+    color: var(--ink);
+    white-space: nowrap;
+  }
+  .shop-tool-btn:hover { border-color: var(--moss); background: var(--light-sage); }
+  .shop-tool-btn.shop-tool-add { background: var(--terracotta); color: white; border-color: var(--terracotta); font-size: 16px; font-weight: 600; }
+  .shop-tool-btn.shop-tool-add:hover { background: #a0521f; }
+
+  @media (max-width: 600px) {
+    .shop-toolbar { gap: 6px; }
+    .shop-tool-btn { padding: 8px 10px; flex-direction: column; gap: 2px; font-size: 18px; min-width: 52px; justify-content: center; }
+    .shop-tool-btn span { font-size: 9px; text-transform: uppercase; letter-spacing: 0.3px; color: var(--sage); }
+    .shop-tool-btn.shop-tool-add span { color: rgba(255,255,255,0.85); }
+    .page-header { align-items: flex-start; }
+  }
   .day-card { min-height: 160px; }
   @media (max-width: 900px) {
     .week-grid { grid-template-columns: repeat(3, 1fr); }
@@ -1439,12 +1472,12 @@ create policy "open" on households for all using (true);</code>
   <div id="shopping" class="section">
     <div class="page-header">
       <h1><em>Indkøbs</em>liste</h1>
-      <div style="display:flex;gap:10px">
-        <button class="btn btn-secondary" onclick="openDayPicker()">🛒 Vælg dage</button>
-        <button class="btn btn-ghost" onclick="toggleStoreSortPanel()">🏪 Butiksgang</button>
-        <button class="btn btn-ghost" onclick="openPriceEstimate()">💰 Prisestimat</button>
-        <button class="btn btn-ghost" onclick="clearChecked()">✓ Fjern afkrydsede</button>
-        <button class="btn btn-primary" onclick="openModal('addShopModal')">+ Tilføj vare</button>
+      <div class="shop-toolbar">
+        <button class="shop-tool-btn" onclick="openDayPicker()" title="Vælg dage">🛒<span>Dage</span></button>
+        <button class="shop-tool-btn" onclick="toggleStoreSortPanel()" title="Butiksgang">🏪<span>Gang</span></button>
+        <button class="shop-tool-btn" onclick="openPriceEstimate()" title="Prisestimat">💰<span>Pris</span></button>
+        <button class="shop-tool-btn" onclick="clearChecked()" title="Fjern afkrydsede">✓<span>Ryd</span></button>
+        <button class="shop-tool-btn shop-tool-add" onclick="openModal('addShopModal')" title="Tilføj vare">+<span>Tilføj</span></button>
       </div>
     </div>
 
