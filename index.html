@@ -75,6 +75,52 @@
     color: white;
   }
 
+  /* BOTTOM NAV on mobile */
+  @media (max-width: 700px) {
+    nav { display: none; } /* hide top nav */
+
+    #bottomNav {
+      display: flex;
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      background: var(--ink);
+      border-top: 1px solid rgba(255,255,255,0.08);
+      z-index: 200;
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+
+    #bottomNav button {
+      flex: 1;
+      background: none;
+      border: none;
+      color: #666;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 9px;
+      font-weight: 500;
+      padding: 10px 4px 8px;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+      transition: color 0.15s;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+
+    #bottomNav button .nav-icon { font-size: 20px; line-height: 1; }
+    #bottomNav button.active { color: var(--terracotta); }
+    #bottomNav button.active .nav-icon { transform: scale(1.1); }
+
+    main { padding-bottom: calc(72px + env(safe-area-inset-bottom)); }
+    header { padding: 0 16px; }
+    header .logo { font-size: 18px; }
+  }
+
+  @media (min-width: 701px) {
+    #bottomNav { display: none; }
+  }
+
   /* MAIN LAYOUT */
   main { max-width: 1200px; margin: 0 auto; padding: 32px 24px; }
 
@@ -1066,7 +1112,6 @@
   @media (max-width: 600px) {
     .week-grid { grid-template-columns: 1fr 1fr; }
     .recipe-detail-grid { grid-template-columns: 1fr; }
-    nav button span { display: none; }
     .page-header { flex-direction: column; align-items: flex-start; gap: 12px; }
   }
 
@@ -2126,10 +2171,13 @@ function showLoginScreen() {
 // ===== NAVIGATION =====
 function showSection(id) {
   document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-  document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('nav button, #bottomNav button').forEach(b => b.classList.remove('active'));
   document.getElementById(id).classList.add('active');
   const idx = ['plan','recipes','shopping','import','madlog','fridge'].indexOf(id);
-  if (idx >= 0) document.querySelectorAll('nav button')[idx].classList.add('active');
+  if (idx >= 0) {
+    document.querySelectorAll('nav button')[idx]?.classList.add('active');
+    document.querySelectorAll('#bottomNav button')[idx]?.classList.add('active');
+  }
   if(id === 'recipes') renderRecipes();
   if(id === 'shopping') renderShopping();
   if(id === 'plan') renderPlan();
@@ -3879,5 +3927,26 @@ async function initApp() {
   initApp();
 })();
 </script>
+<nav id="bottomNav">
+  <button class="active" onclick="showSection('plan')">
+    <span class="nav-icon">📅</span>Madplan
+  </button>
+  <button onclick="showSection('recipes')">
+    <span class="nav-icon">📖</span>Opskrifter
+  </button>
+  <button onclick="showSection('shopping')">
+    <span class="nav-icon">🛒</span>Indkøb
+  </button>
+  <button onclick="showSection('import')">
+    <span class="nav-icon">📷</span>Scan
+  </button>
+  <button onclick="showSection('madlog')">
+    <span class="nav-icon">📓</span>Madlog
+  </button>
+  <button onclick="showSection('fridge')">
+    <span class="nav-icon">🧊</span>Køleskab
+  </button>
+</nav>
+
 </body>
 </html>
