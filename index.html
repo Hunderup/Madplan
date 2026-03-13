@@ -1806,21 +1806,46 @@ create policy "allow_update" on households for update using (true) with check (t
       <button id="tabCreate" onclick="switchLoginTab('create')" style="flex:1;padding:10px;border:none;border-radius:7px;background:none;color:#888;font-family:'DM Sans',sans-serif;font-size:14px;cursor:pointer">Opret husstand</button>
     </div>
 
+
     <!-- JOIN PANEL -->
     <div id="loginJoin">
       <div style="margin-bottom:16px">
         <label style="display:block;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.8px;color:#888;margin-bottom:6px">Husstands-kode</label>
-        <input id="joinCode" placeholder="f.eks. JENSEN42" style="width:100%;padding:13px 16px;border-radius:9px;border:1.5px solid #333;background:#111;color:var(--cream);font-family:'DM Sans',sans-serif;font-size:16px;outline:none;letter-spacing:1px;text-transform:uppercase" oninput="this.value=this.value.toUpperCase()">
+        <div style="display:flex;gap:8px">
+          <input id="joinCode" placeholder="f.eks. JENSEN42" style="flex:1;padding:13px 16px;border-radius:9px;border:1.5px solid #333;background:#111;color:var(--cream);font-family:'DM Sans',sans-serif;font-size:16px;outline:none;letter-spacing:1px;text-transform:uppercase" oninput="this.value=this.value.toUpperCase();onJoinCodeChange()">
+          <button onclick="lookupHousehold()" style="padding:13px 18px;background:#222;color:#ccc;border:1.5px solid #333;border-radius:9px;font-family:'DM Sans',sans-serif;font-size:14px;cursor:pointer;white-space:nowrap">Søg →</button>
+        </div>
       </div>
-      <div style="margin-bottom:24px">
-        <label style="display:block;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.8px;color:#888;margin-bottom:6px">Dit navn</label>
-        <input id="joinName" placeholder="f.eks. Mads" style="width:100%;padding:13px 16px;border-radius:9px;border:1.5px solid #333;background:#111;color:var(--cream);font-family:'DM Sans',sans-serif;font-size:16px;outline:none">
+
+      <!-- Member picker — shown after code lookup -->
+      <div id="joinMemberSection" style="display:none">
+        <div id="joinHHLabel" style="font-size:13px;color:#888;margin-bottom:14px"></div>
+
+        <!-- Existing members -->
+        <div id="joinExistingSection" style="display:none;margin-bottom:20px">
+          <label style="display:block;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.8px;color:#888;margin-bottom:10px">Er du allerede medlem? Vælg dit navn</label>
+          <div id="joinMemberList" style="display:flex;flex-direction:column;gap:8px"></div>
+        </div>
+
+        <!-- Divider -->
+        <div id="joinDivider" style="display:none;display:flex;align-items:center;gap:10px;margin:16px 0">
+          <div style="flex:1;height:1px;background:#333"></div>
+          <span style="color:#555;font-size:12px">eller tilmeld som ny</span>
+          <div style="flex:1;height:1px;background:#333"></div>
+        </div>
+
+        <!-- New member -->
+        <div style="margin-bottom:16px">
+          <label style="display:block;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.8px;color:#888;margin-bottom:6px">Nyt navn</label>
+          <input id="joinName" placeholder="f.eks. Mads" style="width:100%;padding:13px 16px;border-radius:9px;border:1.5px solid #333;background:#111;color:var(--cream);font-family:'DM Sans',sans-serif;font-size:16px;outline:none">
+        </div>
+        <div style="margin-bottom:16px">
+          <label style="display:block;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.8px;color:#888;margin-bottom:10px">Vælg avatar</label>
+          <div id="joinAvatarPicker" style="display:flex;flex-wrap:wrap;gap:8px"></div>
+        </div>
+        <button onclick="joinHousehold()" style="width:100%;padding:14px;background:var(--terracotta);color:white;border:none;border-radius:9px;font-family:'DM Sans',sans-serif;font-size:15px;font-weight:600;cursor:pointer;transition:background 0.2s">Tilmeld som ny →</button>
       </div>
-      <div style="margin-bottom:16px">
-        <label style="display:block;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.8px;color:#888;margin-bottom:10px">Vælg avatar</label>
-        <div id="joinAvatarPicker" style="display:flex;flex-wrap:wrap;gap:8px"></div>
-      </div>
-      <button onclick="joinHousehold()" style="width:100%;padding:14px;background:var(--terracotta);color:white;border:none;border-radius:9px;font-family:'DM Sans',sans-serif;font-size:15px;font-weight:600;cursor:pointer;margin-top:8px;transition:background 0.2s" onmouseover="this.style.background='#a0521f'" onmouseout="this.style.background='var(--terracotta)'">Tilmeld husstand →</button>
+
       <p id="joinError" style="color:#e07060;font-size:13px;margin-top:10px;text-align:center;display:none"></p>
     </div>
 
@@ -2286,24 +2311,83 @@ async function enterAppFromCreate() {
   enterApp();
 }
 
+function onJoinCodeChange() {
+  // Reset member section when code changes
+  document.getElementById('joinMemberSection').style.display = 'none';
+  document.getElementById('joinError').style.display = 'none';
+}
+
+async function lookupHousehold() {
+  const code = document.getElementById('joinCode').value.trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
+  const errEl = document.getElementById('joinError');
+  errEl.style.display = 'none';
+
+  if (!code) { errEl.textContent = 'Indtast husstands-koden'; errEl.style.display = 'block'; return; }
+
+  let row;
+  try { row = await sbGet(code); } catch(e) {
+    errEl.textContent = 'Netværksfejl — tjek din forbindelse og prøv igen.';
+    errEl.style.display = 'block'; return;
+  }
+  if (!row) { errEl.textContent = 'Koden findes ikke. Tjek stavningen og prøv igen.'; errEl.style.display = 'block'; return; }
+
+  const members = row.members || [];
+  document.getElementById('joinHHLabel').textContent = `Husstand: ${row.name}`;
+  document.getElementById('joinMemberSection').style.display = 'block';
+
+  // Show existing members as clickable cards
+  const listEl = document.getElementById('joinMemberList');
+  const existingSection = document.getElementById('joinExistingSection');
+  const divider = document.getElementById('joinDivider');
+
+  if (members.length > 0) {
+    existingSection.style.display = 'block';
+    divider.style.display = 'flex';
+    listEl.innerHTML = members.map(m => `
+      <button onclick="loginAsExistingMember('${code}','${m.id}','${m.name}','${m.avatar}')"
+        style="display:flex;align-items:center;gap:12px;padding:12px 16px;background:#1a1a1a;border:1.5px solid #333;border-radius:10px;cursor:pointer;width:100%;text-align:left;transition:border-color 0.15s"
+        onmouseover="this.style.borderColor='var(--terracotta)'" onmouseout="this.style.borderColor='#333'">
+        <span style="font-size:26px">${m.avatar}</span>
+        <span style="color:var(--cream);font-family:'DM Sans',sans-serif;font-size:15px;font-weight:500">${m.name}</span>
+        <span style="margin-left:auto;color:#555;font-size:12px">→</span>
+      </button>`).join('');
+  } else {
+    existingSection.style.display = 'none';
+    divider.style.display = 'none';
+  }
+}
+
+async function loginAsExistingMember(code, memberId, memberName, memberAvatar) {
+  const errEl = document.getElementById('joinError');
+  try {
+    const row = await sbGet(code);
+    if (!row) throw new Error('Husstand ikke fundet');
+    currentHousehold = { code, name: row.name, memberName, memberAvatar, memberId };
+    localStorage.setItem(localSessionKey, JSON.stringify(currentHousehold));
+    await loadHouseholdData();
+    enterApp();
+  } catch(e) {
+    errEl.textContent = 'Fejl ved login: ' + e.message;
+    errEl.style.display = 'block';
+  }
+}
+
 async function joinHousehold() {
   const code = document.getElementById('joinCode').value.trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
   const memberName = document.getElementById('joinName').value.trim();
   const errEl = document.getElementById('joinError');
   errEl.style.display = 'none';
 
-  if (!code) { errEl.textContent = 'Indtast husstands-koden'; errEl.style.display = 'block'; return; }
+  if (!code) { errEl.textContent = 'Søg efter en husstand først'; errEl.style.display = 'block'; return; }
   if (!memberName) { errEl.textContent = 'Indtast dit navn'; errEl.style.display = 'block'; return; }
 
   const row = await sbGet(code);
-  if (!row) { errEl.textContent = 'Husstands-koden findes ikke. Tjek koden og prøv igen.'; errEl.style.display = 'block'; return; }
+  if (!row) { errEl.textContent = 'Husstands-koden findes ikke.'; errEl.style.display = 'block'; return; }
 
   const members = row.members || [];
-
-  // Check if name already exists in this household
   const nameExists = members.some(m => m.name.toLowerCase() === memberName.toLowerCase());
   if (nameExists) {
-    errEl.textContent = `"${memberName}" er allerede medlem af denne husstand. Er du allerede oprettet? Prøv et andet navn, eller åbn appen — du er måske allerede logget ind.`;
+    errEl.textContent = `"${memberName}" eksisterer allerede — vælg dit navn fra listen ovenfor.`;
     errEl.style.display = 'block';
     return;
   }
@@ -2314,7 +2398,6 @@ async function joinHousehold() {
 
   currentHousehold = { code, name: row.name, memberName, memberAvatar: selectedLoginAvatar, memberId };
   localStorage.setItem(localSessionKey, JSON.stringify(currentHousehold));
-
   await loadHouseholdData();
   enterApp();
 }
