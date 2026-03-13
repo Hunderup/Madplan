@@ -1691,6 +1691,8 @@ create policy "allow_update" on households for update using (true) with check (t
       <div id="priceResults"></div>
     </div>
 
+  </div><!-- /shopping -->
+
   <!-- SCAN IMPORT -->
   <div id="import" class="section">
     <div class="page-header">
@@ -1791,6 +1793,13 @@ create policy "allow_update" on households for update using (true) with check (t
   </div>
 
 </main>
+
+<!-- LOADING OVERLAY -->
+<div id="loadingOverlay" style="position:fixed;inset:0;z-index:600;background:var(--ink);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px">
+  <div style="font-family:'Playfair Display',serif;font-size:28px;color:var(--cream)">Kokkens <em style="color:var(--gold)">Hjørne</em></div>
+  <div class="spinner" style="width:28px;height:28px;border-width:3px;border-color:rgba(255,255,255,0.15);border-top-color:var(--gold)"></div>
+  <div id="loadingMsg" style="font-size:13px;color:#666">Starter app...</div>
+</div>
 
 <!-- ===== LOGIN SCREEN ===== -->
 <div id="loginScreen" style="display:none;position:fixed;inset:0;z-index:500;background:var(--ink);overflow-y:auto">
@@ -4284,6 +4293,14 @@ function showSetupTab(tab) {
   document.getElementById('tabSetupHost').style.border     = tab === 'host' ? 'none' : '1.5px solid var(--border)';
 }
 
+function hideLoadingOverlay() {
+  document.getElementById('loadingOverlay').style.display = 'none';
+}
+
+function setLoadingMsg(msg) {
+  document.getElementById('loadingMsg').textContent = msg;
+}
+
 async function initApp() {
   buildAvatarPicker('joinAvatarPicker', null, selectedLoginAvatar);
   buildAvatarPicker('createAvatarPicker', null, selectedCreateAvatar);
@@ -4292,30 +4309,38 @@ async function initApp() {
   if (session) {
     try {
       currentHousehold = JSON.parse(session);
-      let row = null;
-      try { row = await sbGet(currentHousehold.code); } catch(e) { /* offline */ }
+      setLoadingMsg('Henter husstand...');
 
-      if (row === null && localStorage.getItem(localDataKey)) {
-        // Offline men har lokal cache — log ind direkte
+      let row = null;
+      let networkError = false;
+      try { row = await sbGet(currentHousehold.code); }
+      catch(e) { networkError = true; }
+
+      if (networkError && localStorage.getItem(localDataKey)) {
+        setLoadingMsg('Offline — henter gemt data...');
         await loadHouseholdData();
+        hideLoadingOverlay();
         enterApp();
-        toast('⚡ Offline tilstand — viser gemte data');
-      } else if (row === null) {
-        // Offline og ingen cache
+        toast('⚡ Offline — viser sidst gemte data');
+      } else if (networkError) {
+        hideLoadingOverlay();
         showLoginScreen();
-        toast('Ingen forbindelse — log ind igen når du er online');
+        toast('Ingen forbindelse til serveren');
       } else if (row === undefined) {
-        // Husstand findes ikke i DB
         localStorage.removeItem(localSessionKey);
+        hideLoadingOverlay();
         showLoginScreen();
       } else {
         await loadHouseholdData();
+        hideLoadingOverlay();
         enterApp();
       }
     } catch(e) {
+      hideLoadingOverlay();
       showLoginScreen();
     }
   } else {
+    hideLoadingOverlay();
     showLoginScreen();
   }
 }
