@@ -1481,15 +1481,15 @@ create policy "open" on households for all using (true);</code>
 
       <!-- Add page buttons -->
       <div style="display:flex;gap:10px;margin-bottom:24px;flex-wrap:wrap">
-        <button class="btn btn-primary" onclick="triggerCamera()">📷 Tag billede</button>
-        <button class="btn btn-secondary" onclick="triggerGallery()">🖼️ Vælg fra galleri</button>
+        <label for="cameraInput" class="btn btn-primary" style="cursor:pointer;display:inline-flex;align-items:center;gap:6px">📷 Tag billede</label>
+        <label for="galleryInput" class="btn btn-secondary" style="cursor:pointer;display:inline-flex;align-items:center;gap:6px">🖼️ Vælg fra galleri</label>
         <button class="btn btn-ghost" id="analyseBtn" onclick="analysePages()" style="display:none">✨ Analysér opskrift</button>
         <button class="btn btn-ghost" onclick="resetImport()">↺ Ryd</button>
       </div>
 
-      <!-- Hidden file inputs -->
-      <input type="file" id="cameraInput" accept="image/*" capture="environment" onchange="handlePageAdd(event)" style="display:none">
-      <input type="file" id="galleryInput" accept="image/*" multiple onchange="handlePageAdd(event)" style="display:none">
+      <!-- Hidden file inputs — must NOT be display:none on iOS -->
+      <input type="file" id="cameraInput" accept="image/*" capture="environment" onchange="handlePageAdd(event)" style="position:fixed;top:-9999px;left:-9999px;width:1px;height:1px;opacity:0">
+      <input type="file" id="galleryInput" accept="image/*" multiple onchange="handlePageAdd(event)" style="position:fixed;top:-9999px;left:-9999px;width:1px;height:1px;opacity:0">
 
       <div class="processing-state" id="processingState">
         <div class="spinner"></div>
@@ -3118,8 +3118,18 @@ function generateShoppingList(allowedDays = null) {
 let scannedPages = []; // array of { dataUrl, base64, mediaType }
 const MAX_PAGES = 3;
 
-function triggerCamera()  { document.getElementById('cameraInput').click(); }
-function triggerGallery() { document.getElementById('galleryInput').click(); }
+function triggerCamera() {
+  // iOS Safari requires the click to happen synchronously in a user gesture
+  const input = document.getElementById('cameraInput');
+  input.value = ''; // reset so same photo can be retaken
+  input.click();
+}
+
+function triggerGallery() {
+  const input = document.getElementById('galleryInput');
+  input.value = '';
+  input.click();
+}
 
 function renderPageSlots() {
   const container = document.getElementById('pageSlots');
