@@ -1709,16 +1709,17 @@ create policy "allow_update" on households for update using (true) with check (t
 
       <!-- Buttons -->
       <div style="display:flex;gap:10px;margin-bottom:24px;flex-wrap:wrap">
-        <button class="btn btn-primary" onclick="openCameraModal('scan')">📷 Tag billede</button>
+        <label class="btn btn-primary" style="cursor:pointer;display:inline-flex;align-items:center;gap:6px">
+          📷 Tag billede
+          <input type="file" accept="image/*" capture="environment" onchange="handlePageAdd(event)" style="display:none">
+        </label>
         <label class="btn btn-secondary" style="cursor:pointer;display:inline-flex;align-items:center;gap:6px">
           🖼️ Galleri
-          <input type="file" accept="image/*" multiple onchange="handlePageAdd(event)" style="position:fixed;opacity:0;width:0;height:0;pointer-events:none">
+          <input type="file" accept="image/*" multiple onchange="handlePageAdd(event)" style="display:none">
         </label>
         <button class="btn btn-ghost" id="analyseBtn" onclick="analysePages()" style="display:none">✨ Analysér opskrift</button>
         <button class="btn btn-ghost" onclick="resetImport()">↺ Ryd</button>
       </div>
-      <!-- Hidden file inputs — fallback for iOS Chrome -->
-      <input id="hiddenScanCamera" type="file" accept="image/*" capture="environment" onchange="handlePageAdd(event)" style="position:fixed;opacity:0;width:0;height:0;pointer-events:none">
 
 
       <div class="processing-state" id="processingState">
@@ -1768,18 +1769,17 @@ create policy "allow_update" on households for update using (true) with check (t
         </div>
         <div>
           <label style="font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:var(--sage);display:block;margin-bottom:8px">Eller tag et billede</label>
-          <div class="fridge-photo-drop" onclick="openCameraModal('fridge')" style="cursor:pointer">
-            <div id="fridgePhotoPreview" style="display:none;width:100%;height:100%;position:relative">
+          <label class="fridge-photo-drop" style="cursor:pointer;display:block;position:relative">
+            <input type="file" accept="image/*" capture="environment" onchange="handleFridgePhoto(event)" style="display:none">
+            <div id="fridgePhotoPreview" style="display:none;width:100%;height:100%;position:absolute;inset:0">
               <img id="fridgePhotoImg" src="" style="width:100%;height:100%;object-fit:cover;border-radius:8px">
-              <button onclick="clearFridgePhoto();event.stopPropagation()" style="position:absolute;top:6px;right:6px;background:rgba(0,0,0,0.5);color:white;border:none;border-radius:50%;width:24px;height:24px;cursor:pointer;font-size:14px">×</button>
+              <button onclick="clearFridgePhoto();event.preventDefault();event.stopPropagation()" style="position:absolute;top:6px;right:6px;background:rgba(0,0,0,0.5);color:white;border:none;border-radius:50%;width:28px;height:28px;cursor:pointer;font-size:16px;z-index:2">×</button>
             </div>
             <div id="fridgePhotoPlaceholder">
               <div style="font-size:32px;margin-bottom:8px">📸</div>
               <div style="font-size:13px;color:var(--sage)">Tryk for at tage billede af køleskabet</div>
             </div>
-          </div>
-          <!-- Hidden fallback for iOS Chrome -->
-          <input id="hiddenFridgeCamera" type="file" accept="image/*" capture="environment" onchange="handleFridgePhoto(event)" style="position:fixed;opacity:0;width:0;height:0;pointer-events:none">
+          </label>
         </div>
       </div>
       <button class="btn btn-primary" onclick="getFridgeSuggestions()" style="width:100%;padding:14px">✨ Find retter jeg kan lave</button>
@@ -3561,109 +3561,7 @@ function generateShoppingList(allowedDays = null) {
 
 
 // ===== PHOTO IMPORT =====
-// ===== CAMERA — browser-aware =====
-// iOS Safari: getUserMedia virker fint
-// iOS Chrome/Edge/Firefox: bruger fil-input med capture="environment" (eneste der virker)
-// Android + Desktop: getUserMedia
-
-const _ua = navigator.userAgent;
-const _isIOS = /iP(hone|ad|od)/.test(_ua);
-const _isSafari = _isIOS && /Safari/.test(_ua) && !/CriOS|FxiOS|OPiOS|EdgiOS/.test(_ua);
-const _isIOSChrome = _isIOS && /CriOS/.test(_ua);
-const _useFileInput = _isIOS && !_isSafari; // Chrome/Edge/Firefox på iOS
-
-let _camStream = null;
-let _camTarget = 'scan';
-let _camFacing = 'environment';
-
-async function openCameraModal(target) {
-  _camTarget = target;
-  _camFacing = 'environment';
-
-  if (_useFileInput) {
-    // iOS Chrome m.fl. — vis vejledning og brug fil-input
-    showIOSChromeHint(target);
-    return;
-  }
-
-  // Safari på iOS + Android + Desktop: getUserMedia
-  document.getElementById('cameraTitle').textContent =
-    target === 'fridge' ? 'Billede af køleskab' : 'Billede af opskrift';
-  document.getElementById('cameraModal').style.display = 'flex';
-  await _startCamera();
-}
-
-function showIOSChromeHint(target) {
-  // Vis en kort toast og trigger fil-input direkte
-  toast('📷 Tryk OK for at åbne kameraet');
-  setTimeout(() => {
-    const id = target === 'fridge' ? 'hiddenFridgeCamera' : 'hiddenScanCamera';
-    const el = document.getElementById(id);
-    if (el) { el.value = ''; el.click(); }
-  }, 100);
-}
-
-async function _startCamera() {
-  _stopCamera();
-  try {
-    _camStream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: _camFacing },
-      audio: false
-    });
-    document.getElementById('cameraVideo').srcObject = _camStream;
-  } catch(e) {
-    closeCameraModal();
-    // Fallback: fil-input
-    const id = _camTarget === 'fridge' ? 'hiddenFridgeCamera' : 'hiddenScanCamera';
-    const el = document.getElementById(id);
-    if (el) { el.value = ''; el.click(); }
-    if (e.name === 'NotAllowedError') {
-      toast('Kamera-adgang afvist — tjek browser-indstillinger');
-    }
-  }
-}
-
-async function switchCamera() {
-  _camFacing = _camFacing === 'environment' ? 'user' : 'environment';
-  await _startCamera();
-}
-
-function _stopCamera() {
-  if (_camStream) { _camStream.getTracks().forEach(t => t.stop()); _camStream = null; }
-}
-
-function closeCameraModal() {
-  _stopCamera();
-  document.getElementById('cameraModal').style.display = 'none';
-}
-
-function capturePhoto() {
-  const video = document.getElementById('cameraVideo');
-  const canvas = document.createElement('canvas');
-  canvas.width = video.videoWidth;
-  canvas.height = video.videoHeight;
-  canvas.getContext('2d').drawImage(video, 0, 0);
-  const dataUrl = canvas.toDataURL('image/jpeg', 0.92);
-  closeCameraModal();
-
-  if (_camTarget === 'fridge') {
-    fridgePhotoData = dataUrl;
-    document.getElementById('fridgePhotoImg').src = dataUrl;
-    document.getElementById('fridgePhotoPreview').style.display = 'block';
-    document.getElementById('fridgePhotoPlaceholder').style.display = 'none';
-  } else {
-    if (scannedPages.length < MAX_PAGES) {
-      scannedPages.push({ dataUrl, base64: dataUrl.split(',')[1], mediaType: 'image/jpeg' });
-      renderPageSlots();
-    } else {
-      toast(`Maksimalt ${MAX_PAGES} sider`);
-    }
-  }
-}
-
-function triggerScanCamera() { openCameraModal('scan'); }
-function triggerFridgeCamera() { openCameraModal('fridge'); }
-
+// ===== SCAN / IMPORT (multi-page) =====
 // ===== SCAN / IMPORT (multi-page) =====
 let scannedPages = []; // array of { dataUrl, base64, mediaType }
 const MAX_PAGES = 3;
@@ -4431,20 +4329,6 @@ async function initApp() {
   initApp();
 })();
 </script>
-<!-- CAMERA MODAL (bruges af Safari iOS + Android + Desktop) -->
-<div id="cameraModal" style="display:none;position:fixed;inset:0;z-index:1000;background:#000;flex-direction:column">
-  <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px;background:rgba(0,0,0,0.6)">
-    <span style="color:white;font-size:14px;font-weight:500" id="cameraTitle">Tag billede</span>
-    <button onclick="closeCameraModal()" style="background:none;border:none;color:white;font-size:28px;cursor:pointer;line-height:1">×</button>
-  </div>
-  <video id="cameraVideo" autoplay playsinline muted style="flex:1;width:100%;object-fit:cover"></video>
-  <div style="padding:24px 16px;background:rgba(0,0,0,0.6);display:flex;justify-content:center;gap:32px;align-items:center">
-    <button onclick="switchCamera()" style="background:rgba(255,255,255,0.15);border:none;border-radius:50%;width:52px;height:52px;color:white;font-size:22px;cursor:pointer">🔄</button>
-    <button onclick="capturePhoto()" style="background:white;border:5px solid rgba(255,255,255,0.4);border-radius:50%;width:76px;height:76px;cursor:pointer;flex-shrink:0;box-shadow:0 0 0 2px #000"></button>
-    <div style="width:52px"></div>
-  </div>
-</div>
-
 <nav id="bottomNav">
   <button class="active" onclick="showSection('plan')">
     <span class="nav-icon">📅</span>Madplan
