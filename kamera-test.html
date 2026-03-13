@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kamera Test</title>
+<style>
+  body { font-family: sans-serif; padding: 20px; background: #111; color: white; }
+  h2 { margin-bottom: 8px; }
+  .box { background: #222; border-radius: 12px; padding: 16px; margin-bottom: 16px; }
+  .ok { color: #4caf50; }
+  .fail { color: #f44336; }
+  .warn { color: #ff9800; }
+  button { background: #e07; color: white; border: none; border-radius: 8px; padding: 14px 24px; font-size: 16px; cursor: pointer; margin: 6px; width: calc(100% - 12px); }
+  button.secondary { background: #333; }
+  video { width: 100%; border-radius: 8px; background: #000; margin-top: 10px; }
+  #log { font-family: monospace; font-size: 12px; white-space: pre-wrap; word-break: break-all; max-height: 200px; overflow-y: auto; }
+  canvas { display: none; }
+  img { width: 100%; border-radius: 8px; margin-top: 10px; display: none; }
+  label.filebtn { display: block; background: #555; color: white; border-radius: 8px; padding: 14px 24px; font-size: 16px; text-align: center; margin: 6px; cursor: pointer; }
+</style>
+</head>
+<body>
+
+<h2>📷 Kamera Diagnostik</h2>
+
+<div class="box">
+  <h3>1. Browser info</h3>
+  <div id="browserInfo"></div>
+</div>
+
+<div class="box">
+  <h3>2. API tilgængelighed</h3>
+  <div id="apiCheck"></div>
+</div>
+
+<div class="box">
+  <h3>3. Test: getUserMedia (live kamera)</h3>
+  <button onclick="testGetUserMedia()">▶ Start kamera med getUserMedia</button>
+  <button class="secondary" onclick="stopStream()">⏹ Stop kamera</button>
+  <video id="video" autoplay playsinline muted></video>
+  <button onclick="captureFromVideo()" style="background:#4caf50;margin-top:8px">📸 Tag billede</button>
+  <img id="capturedImg">
+</div>
+
+<div class="box">
+  <h3>4. Test: file input capture (gammel metode)</h3>
+  <label class="filebtn">
+    📷 Tag billede (capture=environment)
+    <input type="file" accept="image/*" capture="environment" onchange="showFile(event)" style="display:none">
+  </label>
+  <label class="filebtn" style="background:#444">
+    🖼️ Vælg fra galleri
+    <input type="file" accept="image/*" onchange="showFile(event)" style="display:none">
+  </label>
+  <img id="fileImg">
+</div>
+
+<div class="box">
+  <h3>5. Log</h3>
+  <div id="log">Klar...\n</div>
+</div>
+
+<canvas id="canvas"></canvas>
+
+<script>
+let stream = null;
+
+function log(msg, type='') {
+  const el = document.getElementById('log');
+  const color = type === 'ok' ? '#4caf50' : type === 'fail' ? '#f44336' : type === 'warn' ? '#ff9800' : '#aaa';
+  el.innerHTML += `<span style="color:${color}">${new Date().toLocaleTimeString()}: ${msg}</span>\n`;
+  el.scrollTop = el.scrollHeight;
+}
+
+// Browser info
+document.getElementById('browserInfo').innerHTML = `
+  <div>UA: <small>${navigator.userAgent}</small></div>
+  <div>Platform: ${navigator.platform}</div>
+  <div>Protocol: <span class="${location.protocol === 'https:' ? 'ok' : 'fail'}">${location.protocol}</span> ${location.protocol !== 'https:' ? '⚠️ Kamera kræver HTTPS!' : '✓'}</div>
+`;
+
+// API check
+const checks = [
+  ['navigator.mediaDevices', !!navigator.mediaDevices],
+  ['navigator.mediaDevices.getUserMedia', !!(navigator.mediaDevices?.getUserMedia)],
+  ['navigator.mediaDevices.enumerateDevices', !!(navigator.mediaDevices?.enumerateDevices)],
+  ['FileReader API', typeof FileReader !== 'undefined'],
+];
+document.getElementById('apiCheck').innerHTML = checks.map(([name, ok]) =>
+  `<div class="${ok ? 'ok' : 'fail'}">${ok ? '✓' : '✗'} ${name}</div>`
+).join('');
+
+// Enumerate cameras if available
+if (navigator.mediaDevices?.enumerateDevices) {
+  navigator.mediaDevices.enumerateDevices().then(devices => {
+    const cams = devices.filter(d => d.kind === 'videoinput');
+    log(`Fandt ${cams.length} kamera(er): ${cams.map(c => c.label || 'unavngivet').join(', ')}`, cams.length ? 'ok' : 'warn');
+  }).catch(e => log('enumerateDevices fejl: ' + e, 'fail'));
+}
+
+async function testGetUserMedia() {
+  log('Forsøger getUserMedia...');
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: 'environment' },
+      audio: false
+    });
+    document.getElementById('video').srcObject = stream;
+    log('getUserMedia OK! Stream aktiv.', 'ok');
+    const tracks = stream.getVideoTracks();
+    tracks.forEach(t => log(`Track: ${t.label}, state: ${t.readyState}`, 'ok'));
+  } catch(e) {
+    log(`getUserMedia FEJL: ${e.name}: ${e.message}`, 'fail');
+    if (e.name === 'NotAllowedError') log('→ Kamera-tilladelse afvist. Tjek browser-indstillinger.', 'warn');
+    if (e.name === 'NotFoundError') log('→ Ingen kamera fundet på enheden.', 'warn');
+    if (e.name === 'NotReadableError') log('→ Kamera bruges af en anden app.', 'warn');
+    if (e.name === 'OverconstrainedError') log('→ Constraint fejl: ' + e.constraint, 'warn');
+  }
+}
+
+function stopStream() {
+  if (stream) {
+    stream.getTracks().forEach(t => t.stop());
+    stream = null;
+    document.getElementById('video').srcObject = null;
+    log('Kamera stoppet.', 'warn');
+  }
+}
+
+function captureFromVideo() {
+  const video = document.getElementById('video');
+  if (!video.srcObject) { log('Ingen stream aktiv', 'fail'); return; }
+  const canvas = document.getElementById('canvas');
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
+  canvas.getContext('2d').drawImage(video, 0, 0);
+  const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
+  const img = document.getElementById('capturedImg');
+  img.src = dataUrl;
+  img.style.display = 'block';
+  log(`Billede taget: ${video.videoWidth}x${video.videoHeight}px`, 'ok');
+}
+
+function showFile(event) {
+  const file = event.target.files[0];
+  if (!file) { log('Ingen fil valgt', 'warn'); return; }
+  log(`Fil valgt: ${file.name}, ${file.type}, ${Math.round(file.size/1024)}KB`, 'ok');
+  const reader = new FileReader();
+  reader.onload = e => {
+    const img = document.getElementById('fileImg');
+    img.src = e.target.result;
+    img.style.display = 'block';
+    log('Fil indlæst som billede ✓', 'ok');
+  };
+  reader.readAsDataURL(file);
+}
+</script>
+</body>
+</html>
