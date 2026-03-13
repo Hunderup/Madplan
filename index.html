@@ -1885,7 +1885,8 @@ create policy "allow_update" on households for update using (true) with check (t
 
       <div style="margin-bottom:8px;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.6px;color:var(--moss)">Medlemmer</div>
       <div id="hhMembersList" style="display:flex;flex-direction:column;gap:8px;margin-bottom:20px"></div>
-      <div style="border-top:1px solid var(--border);padding-top:16px;display:flex;gap:10px">
+      <div style="border-top:1px solid var(--border);padding-top:16px;display:flex;gap:10px;flex-wrap:wrap">
+        <button onclick="openChangeCodeModal()" class="btn btn-ghost" style="flex:1">🔑 Skift kode</button>
         <button onclick="leaveHousehold()" class="btn btn-ghost" style="flex:1;color:var(--terracotta);border-color:var(--terracotta)">Forlad husstand</button>
       </div>
     </div>
@@ -1893,6 +1894,32 @@ create policy "allow_update" on households for update using (true) with check (t
 </div>
 
 <!-- MODALS -->
+
+<!-- Change Code Modal -->
+<div class="modal-overlay" id="changeCodeModal">
+  <div class="modal" style="max-width:440px">
+    <div class="modal-header">
+      <h2>🔑 Skift husstands-kode</h2>
+      <button class="modal-close" onclick="closeModal('changeCodeModal')">×</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:13px;color:var(--sage);margin-bottom:20px;line-height:1.7">
+        Al data flyttes til den nye kode. Den gamle kode holder op med at virke — sørg for at fortælle alle familiemedlemmer den nye kode bagefter.
+      </p>
+      <div class="form-row">
+        <label>Ny kode (4–12 tegn, kun bogstaver og tal)</label>
+        <input id="newCodeInput" placeholder="f.eks. HANSEN22" maxlength="12"
+          style="text-transform:uppercase;letter-spacing:2px;font-size:18px;font-family:'Playfair Display',serif"
+          oninput="this.value=this.value.toUpperCase().replace(/[^A-Z0-9]/g,'')">
+      </div>
+      <div id="changeCodeStatus" style="font-size:13px;margin-top:8px;min-height:20px"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('changeCodeModal')">Annuller</button>
+      <button class="btn btn-primary" onclick="confirmChangeCode()">Skift kode →</button>
+    </div>
+  </div>
+</div>
 
 <!-- Add Recipe Modal -->
 <div class="modal-overlay" id="addRecipeModal">
@@ -2016,6 +2043,7 @@ let _sb = null; // Supabase client
 let _realtimeChannel = null;
 
 const localSessionKey = 'hh_session';
+const localDataKey    = 'hh_local_data'; // offline cache
 const SB_URL_KEY = 'sb_url';
 const SB_KEY_KEY = 'sb_key';
 
@@ -2056,7 +2084,12 @@ async function saveSupabaseConfig() {
 
 async function sbGet(code) {
   const sb = getSupabase(); if (!sb) return null;
-  const { data } = await sb.from('households').select('*').eq('code', code).single();
+  const { data, error } = await sb.from('households').select('*').eq('code', code).single();
+  if (error) {
+    // PGRST116 = no rows found (husstand eksisterer ikke)
+    if (error.code === 'PGRST116') return undefined;
+    throw error; // netværksfejl — lad caller håndtere
+  }
   return data;
 }
 
@@ -2068,24 +2101,47 @@ async function sbUpsert(row) {
 
 // ---- HOUSEHOLD DATA ----
 async function loadHouseholdData() {
-  const row = await sbGet(currentHousehold.code);
+  let row = null;
+  try {
+    row = await sbGet(currentHousehold.code);
+  } catch(e) { /* offline — fall through to local cache */ }
+
   if (row?.data && Object.keys(row.data).length) {
-    recipes     = row.data.recipes     || getDefaultRecipes();
-    weekPlan    = row.data.weekPlan    || {};
+    recipes      = row.data.recipes      || getDefaultRecipes();
+    weekPlan     = row.data.weekPlan     || {};
     shoppingList = row.data.shoppingList || [];
+    if (row.stores?.length) householdStores = row.stores;
+    if (row.shop_day)       householdShopDay = row.shop_day;
+    // Update local cache with fresh data
+    localStorage.setItem(localDataKey, JSON.stringify({ recipes, weekPlan, shoppingList, stores: householdStores, shop_day: householdShopDay }));
+  } else if (!row) {
+    // Offline — load from local cache
+    const cached = localStorage.getItem(localDataKey);
+    if (cached) {
+      const d = JSON.parse(cached);
+      recipes      = d.recipes      || getDefaultRecipes();
+      weekPlan     = d.weekPlan     || {};
+      shoppingList = d.shoppingList || [];
+      if (d.stores?.length) householdStores = d.stores;
+      if (d.shop_day)       householdShopDay = d.shop_day;
+      setSyncState('error'); // show offline indicator
+    } else {
+      recipes = getDefaultRecipes();
+      weekPlan = {};
+      shoppingList = [];
+    }
   } else {
     recipes = getDefaultRecipes();
     weekPlan = {};
     shoppingList = [];
     await saveHouseholdData();
   }
-  // Restore store settings
-  if (row?.stores?.length) householdStores = row.stores;
-  if (row?.shop_day) householdShopDay = row.shop_day;
 }
 
 async function saveHouseholdData() {
   if (!currentHousehold) return;
+  // Always save to local cache immediately — works offline
+  localStorage.setItem(localDataKey, JSON.stringify({ recipes, weekPlan, shoppingList, stores: householdStores, shop_day: householdShopDay }));
   setSyncState('syncing');
   try {
     await sbUpsert({ code: currentHousehold.code, data: { recipes, weekPlan, shoppingList } });
@@ -2329,6 +2385,78 @@ async function openHouseholdModal() {
   ).join('');
   // Open directly — do NOT call openModal() which would recurse
   document.getElementById('householdModal').classList.add('open');
+}
+
+function openChangeCodeModal() {
+  document.getElementById('newCodeInput').value = '';
+  document.getElementById('changeCodeStatus').textContent = '';
+  closeModal('householdModal');
+  document.getElementById('changeCodeModal').classList.add('open');
+}
+
+async function confirmChangeCode() {
+  const newCode = document.getElementById('newCodeInput').value.trim().toUpperCase();
+  const statusEl = document.getElementById('changeCodeStatus');
+
+  if (newCode.length < 4) {
+    statusEl.style.color = 'var(--terracotta)';
+    statusEl.textContent = 'Koden skal være mindst 4 tegn.';
+    return;
+  }
+  if (newCode === currentHousehold.code) {
+    statusEl.style.color = 'var(--terracotta)';
+    statusEl.textContent = 'Det er allerede din nuværende kode.';
+    return;
+  }
+
+  statusEl.style.color = 'var(--sage)';
+  statusEl.textContent = 'Tjekker om koden er ledig...';
+
+  const sb = getSupabase();
+  // Check if new code already taken
+  let existing;
+  try { existing = await sbGet(newCode); } catch(e) {
+    statusEl.style.color = 'var(--terracotta)';
+    statusEl.textContent = 'Netværksfejl — prøv igen.';
+    return;
+  }
+  if (existing) {
+    statusEl.style.color = 'var(--terracotta)';
+    statusEl.textContent = 'Den kode er allerede i brug — vælg en anden.';
+    return;
+  }
+
+  statusEl.textContent = 'Flytter data til ny kode...';
+
+  try {
+    // 1. Fetch current full row
+    const oldRow = await sbGet(currentHousehold.code);
+
+    // 2. Insert new row with new code, same data
+    const { error: insertErr } = await sb.from('households').insert({
+      code:     newCode,
+      name:     oldRow.name,
+      members:  oldRow.members,
+      stores:   oldRow.stores,
+      shop_day: oldRow.shop_day,
+      data:     oldRow.data
+    });
+    if (insertErr) throw insertErr;
+
+    // 3. Delete old row
+    await sb.from('households').delete().eq('code', currentHousehold.code);
+
+    // 4. Update local session
+    currentHousehold.code = newCode;
+    localStorage.setItem(localSessionKey, JSON.stringify(currentHousehold));
+    localStorage.setItem(localDataKey, JSON.stringify({ recipes, weekPlan, shoppingList, stores: householdStores, shop_day: householdShopDay }));
+
+    closeModal('changeCodeModal');
+    toast(`✓ Kode ændret til ${newCode} — fortæl det til din familie!`);
+  } catch(e) {
+    statusEl.style.color = 'var(--terracotta)';
+    statusEl.textContent = 'Fejl: ' + e.message;
+  }
 }
 
 function copyCode() {
@@ -4095,16 +4223,27 @@ async function initApp() {
   if (session) {
     try {
       currentHousehold = JSON.parse(session);
-      // Verify the household still exists in DB
-      const row = await sbGet(currentHousehold.code);
-      if (!row) throw new Error('Husstand ikke fundet');
-      await loadHouseholdData();
-      enterApp();
-    } catch(e) {
-      // Don't clear session on network errors — only on missing household
-      if (e.message === 'Husstand ikke fundet') {
+      let row = null;
+      try { row = await sbGet(currentHousehold.code); } catch(e) { /* offline */ }
+
+      if (row === null && localStorage.getItem(localDataKey)) {
+        // Offline men har lokal cache — log ind direkte
+        await loadHouseholdData();
+        enterApp();
+        toast('⚡ Offline tilstand — viser gemte data');
+      } else if (row === null) {
+        // Offline og ingen cache
+        showLoginScreen();
+        toast('Ingen forbindelse — log ind igen når du er online');
+      } else if (row === undefined) {
+        // Husstand findes ikke i DB
         localStorage.removeItem(localSessionKey);
+        showLoginScreen();
+      } else {
+        await loadHouseholdData();
+        enterApp();
       }
+    } catch(e) {
       showLoginScreen();
     }
   } else {
