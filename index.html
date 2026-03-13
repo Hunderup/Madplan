@@ -1,0 +1,3766 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kokkens Hjørne — Madplan & Opskrifter</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<style>
+  :root {
+    --cream: #F7F3EC;
+    --warm-white: #FDFAF5;
+    --ink: #1C1A17;
+    --moss: #4A5240;
+    --sage: #7A8C6E;
+    --terracotta: #C4622D;
+    --gold: #D4A853;
+    --rust: #8B3A1F;
+    --light-sage: #E8EDE3;
+    --border: #D9D0C0;
+    --shadow: rgba(28,26,23,0.12);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--cream);
+    color: var(--ink);
+    min-height: 100vh;
+  }
+
+  /* HEADER */
+  header {
+    background: var(--ink);
+    color: var(--cream);
+    padding: 0 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 64px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    border-bottom: 2px solid var(--terracotta);
+  }
+
+  .logo {
+    font-family: 'Playfair Display', serif;
+    font-size: 22px;
+    letter-spacing: 0.5px;
+  }
+
+  .logo span { color: var(--gold); font-style: italic; }
+
+  nav { display: flex; gap: 4px; }
+
+  nav button {
+    background: none;
+    border: none;
+    color: #A09888;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    padding: 8px 14px;
+    border-radius: 6px;
+    cursor: pointer;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    transition: all 0.2s;
+  }
+
+  nav button.active, nav button:hover {
+    background: var(--terracotta);
+    color: white;
+  }
+
+  /* MAIN LAYOUT */
+  main { max-width: 1200px; margin: 0 auto; padding: 32px 24px; }
+
+  .section { display: none; }
+  .section.active { display: block; }
+
+  /* PAGE HEADERS */
+  .page-header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    margin-bottom: 32px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .page-header h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: 36px;
+    font-weight: 400;
+    line-height: 1;
+  }
+
+  .page-header h1 em { color: var(--terracotta); }
+
+  /* BUTTONS */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    border: none;
+    transition: all 0.2s;
+  }
+
+  .btn-primary { background: var(--terracotta); color: white; }
+  .btn-primary:hover { background: var(--rust); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(196,98,45,0.3); }
+
+  .btn-secondary { background: var(--light-sage); color: var(--moss); border: 1px solid var(--border); }
+  .btn-secondary:hover { background: var(--sage); color: white; }
+
+  .btn-ghost { background: none; color: var(--sage); border: 1px solid var(--border); }
+  .btn-ghost:hover { border-color: var(--sage); background: var(--light-sage); }
+
+  .btn-sm { padding: 6px 12px; font-size: 12px; }
+
+  /* MEAL PLAN */
+  .week-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 12px;
+    margin-bottom: 32px;
+  }
+
+  .day-card {
+    background: var(--warm-white);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    min-height: 220px;
+    display: flex;
+    flex-direction: column;
+    transition: box-shadow 0.2s;
+  }
+
+  .day-card:hover { box-shadow: 0 4px 20px var(--shadow); }
+
+  .day-header {
+    background: var(--moss);
+    color: white;
+    padding: 8px 12px;
+    font-size: 12px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .day-header .date { opacity: 0.7; font-size: 10px; }
+
+  .day-meals { padding: 10px; flex: 1; display: flex; flex-direction: column; gap: 6px; }
+
+  .meal-slot {
+    border: 1.5px dashed var(--border);
+    border-radius: 8px;
+    padding: 8px 10px;
+    font-size: 12px;
+    color: #999;
+    cursor: pointer;
+    transition: all 0.2s;
+    min-height: 36px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .meal-slot:hover { border-color: var(--terracotta); color: var(--terracotta); background: rgba(196,98,45,0.04); }
+
+  .meal-slot.filled {
+    border-style: solid;
+    border-color: var(--sage);
+    background: var(--light-sage);
+    color: var(--moss);
+    font-weight: 500;
+    cursor: default;
+  }
+
+  .meal-slot.filled:hover { border-color: var(--moss); background: var(--light-sage); color: var(--moss); }
+
+  .meal-type-label {
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--sage);
+    margin-bottom: 2px;
+    display: block;
+  }
+
+  .meal-remove {
+    margin-left: auto;
+    background: none;
+    border: none;
+    color: var(--terracotta);
+    cursor: pointer;
+    font-size: 14px;
+    padding: 0;
+    line-height: 1;
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+
+  .meal-slot.filled:hover .meal-remove { opacity: 1; }
+
+  /* RECIPE GRID */
+  .recipe-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 20px;
+  }
+
+  .recipe-card {
+    background: var(--warm-white);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+    transition: all 0.25s;
+    cursor: pointer;
+  }
+
+  .recipe-card:hover { transform: translateY(-3px); box-shadow: 0 8px 24px var(--shadow); }
+
+  .recipe-thumb {
+    height: 160px;
+    background: linear-gradient(135deg, var(--light-sage), var(--border));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 48px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .recipe-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .recipe-kcal-badge {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: rgba(28,26,23,0.75);
+    color: var(--gold);
+    font-size: 11px;
+    font-weight: 600;
+    padding: 4px 8px;
+    border-radius: 20px;
+    backdrop-filter: blur(4px);
+  }
+
+  .recipe-body { padding: 14px 16px; }
+
+  .recipe-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 17px;
+    margin-bottom: 6px;
+    line-height: 1.3;
+  }
+
+  .recipe-meta {
+    display: flex;
+    gap: 12px;
+    font-size: 12px;
+    color: var(--sage);
+    margin-bottom: 10px;
+  }
+
+  .recipe-tags { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
+
+  .tag {
+    background: var(--light-sage);
+    color: var(--moss);
+    font-size: 11px;
+    padding: 3px 8px;
+    border-radius: 20px;
+    font-weight: 500;
+  }
+
+  .recipe-actions { display: flex; gap: 8px; }
+
+  /* ADD RECIPE CARD */
+  .recipe-add-card {
+    background: none;
+    border: 2px dashed var(--border);
+    border-radius: 14px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 40px;
+    cursor: pointer;
+    transition: all 0.2s;
+    color: var(--sage);
+    min-height: 260px;
+  }
+
+  .recipe-add-card:hover { border-color: var(--terracotta); color: var(--terracotta); background: rgba(196,98,45,0.03); }
+  .recipe-add-card .add-icon { font-size: 36px; }
+  .recipe-add-card span { font-size: 14px; font-weight: 500; }
+
+  /* SHOPPING LIST */
+  .shopping-header { display: flex; align-items: center; gap: 16px; margin-bottom: 24px; }
+
+  .shop-categories { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
+
+  .shop-category {
+    background: var(--warm-white);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+
+  .shop-cat-header {
+    padding: 12px 16px;
+    font-size: 13px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .shop-cat-header .cat-icon { font-size: 18px; }
+
+  .shop-items { padding: 8px 0; }
+
+  .shop-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 16px;
+    font-size: 14px;
+    transition: background 0.15s;
+  }
+
+  .shop-item:hover { background: var(--light-sage); }
+
+  .shop-item input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--terracotta);
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+
+  .shop-item label {
+    flex: 1;
+    cursor: pointer;
+    line-height: 1.3;
+  }
+
+  .shop-item.checked label { text-decoration: line-through; color: #AAA; }
+
+  .shop-item .amount {
+    color: var(--sage);
+    font-size: 12px;
+    font-weight: 500;
+    white-space: nowrap;
+  }
+
+  .shop-have-btn {
+    margin-left: auto;
+    background: var(--light-sage);
+    color: var(--moss);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 2px 10px;
+    font-size: 11px;
+    font-weight: 500;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.15s;
+    flex-shrink: 0;
+  }
+  .shop-have-btn:hover {
+    background: var(--sage);
+    color: white;
+    border-color: var(--sage);
+  }
+
+  .day-pick-tile {
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    padding: 8px 4px;
+    text-align: center;
+    cursor: pointer;
+    background: var(--cream);
+    transition: all 0.15s;
+    user-select: none;
+    position: relative;
+    min-height: 80px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 4px;
+  }
+  .day-pick-tile.selected {
+    border-color: var(--terracotta);
+    background: rgba(196,98,45,0.07);
+  }
+  .day-pick-tile.empty {
+    opacity: 0.4;
+    cursor: default;
+  }
+  .day-pick-tile.leftover-day-tile {
+    border-color: var(--sage);
+    background: #f3f6ef;
+  }
+  .day-pick-tile .day-pick-name {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--sage);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .day-pick-tile .day-pick-emoji {
+    font-size: 20px;
+    line-height: 1;
+  }
+  .day-pick-tile .day-pick-recipe {
+    font-size: 10px;
+    color: var(--ink);
+    line-height: 1.3;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    padding: 0 2px;
+    width: 100%;
+  }
+  .day-pick-tile .day-pick-leftover-label {
+    font-size: 9px;
+    color: var(--sage);
+    font-weight: 600;
+  }
+  .day-pick-tile .day-pick-check {
+    position: absolute;
+    top: 5px;
+    right: 6px;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    border: 1.5px solid var(--border);
+    background: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    transition: all 0.15s;
+  }
+  .day-pick-tile.selected .day-pick-check {
+    background: var(--terracotta);
+    border-color: var(--terracotta);
+    color: white;
+  }
+
+  /* PORTIONS SCALER */
+  .portions-scaler {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--cream);
+    border: 1.5px solid var(--border);
+    border-radius: 20px;
+    padding: 4px 8px;
+  }
+  .portions-btn {
+    width: 26px; height: 26px;
+    border-radius: 50%;
+    border: 1px solid var(--border);
+    background: var(--warm-white);
+    font-size: 16px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.15s;
+    font-weight: 300;
+  }
+  .portions-btn:hover { background: var(--terracotta); color: white; border-color: var(--terracotta); }
+
+  /* FRIDGE */
+  .fridge-photo-drop {
+    border: 2px dashed var(--border);
+    border-radius: 12px;
+    background: var(--warm-white);
+    height: 150px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: border-color 0.2s;
+    overflow: hidden;
+  }
+  .fridge-photo-drop:hover { border-color: var(--terracotta); }
+
+  .fridge-suggestion-card {
+    background: var(--warm-white);
+    border: 1.5px solid var(--border);
+    border-radius: 14px;
+    padding: 20px;
+    margin-bottom: 16px;
+  }
+  .fridge-suggestion-card h3 {
+    font-family: 'Playfair Display', serif;
+    font-size: 18px;
+    font-weight: 400;
+    margin-bottom: 6px;
+  }
+  .fridge-match-bar {
+    height: 6px;
+    background: var(--border);
+    border-radius: 3px;
+    margin: 8px 0 12px;
+    overflow: hidden;
+  }
+  .fridge-match-fill {
+    height: 100%;
+    background: var(--sage);
+    border-radius: 3px;
+    transition: width 0.5s;
+  }
+
+  /* MADLOG */
+  .madlog-week {
+    margin-bottom: 32px;
+  }
+  .madlog-week-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 18px;
+    font-weight: 400;
+    color: var(--moss);
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+  .madlog-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 8px;
+  }
+  .madlog-day {
+    background: var(--warm-white);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 8px;
+    min-height: 80px;
+    font-size: 12px;
+  }
+  .madlog-day-name {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    color: var(--sage);
+    margin-bottom: 6px;
+  }
+  .madlog-meal {
+    display: flex;
+    align-items: flex-start;
+    gap: 4px;
+    margin-bottom: 4px;
+    font-size: 11px;
+    line-height: 1.3;
+  }
+  .madlog-meal-emoji { flex-shrink: 0; font-size: 14px; }
+
+  /* STORE SORT */
+  .store-sort-panel {
+    background: var(--warm-white);
+    border: 1.5px solid var(--border);
+    border-radius: 14px;
+    padding: 20px;
+    margin-bottom: 24px;
+  }
+  .store-sort-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    background: var(--cream);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    margin-bottom: 6px;
+    cursor: grab;
+    user-select: none;
+    font-size: 14px;
+    transition: background 0.1s;
+  }
+  .store-sort-row:active { cursor: grabbing; background: var(--light-sage); }
+  .store-sort-row .drag-handle { color: var(--sage); font-size: 16px; }
+
+  .leftover-btn {
+    background: none;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    padding: 2px 5px;
+    cursor: pointer;
+    font-size: 14px;
+    opacity: 0.35;
+    transition: opacity 0.15s, background 0.15s;
+    flex-shrink: 0;
+  }
+  .meal-slot.filled:hover .leftover-btn { opacity: 0.7; }
+  .leftover-btn.active {
+    opacity: 1;
+    background: rgba(120, 160, 80, 0.15);
+    border-color: var(--sage);
+  }
+
+  .leftover-plan-badge {
+    display: inline-block;
+    background: #e8f0e3;
+    color: var(--moss);
+    border-radius: 8px;
+    font-size: 10px;
+    font-weight: 600;
+    padding: 2px 7px;
+    margin-left: 6px;
+    vertical-align: middle;
+    letter-spacing: 0.2px;
+  }
+
+  .meal-slot.is-leftover {
+    opacity: 0.78;
+    background: #f3f6ef !important;
+    border-color: var(--sage) !important;
+  }
+
+  .day-card.leftover-day .day-header {
+    background: #eef3e8;
+  }
+
+  .leftover-tag {
+    display: inline-block;
+    background: #e8f0e3;
+    color: var(--moss);
+    border-radius: 8px;
+    font-size: 10px;
+    font-weight: 600;
+    padding: 1px 6px;
+    margin-left: 4px;
+    vertical-align: middle;
+    letter-spacing: 0.3px;
+  }
+
+  .shop-item label {
+    flex: 1;
+    cursor: pointer;
+    min-width: 0;
+  }
+    background: none;
+    border: none;
+    color: #CCC;
+    cursor: pointer;
+    font-size: 16px;
+    padding: 0 4px;
+    transition: color 0.15s;
+  }
+
+  .shop-item-del:hover { color: var(--terracotta); }
+
+  /* ADD ITEM */
+  .shop-add-row {
+    padding: 10px 16px;
+    display: flex;
+    gap: 8px;
+    border-top: 1px solid var(--border);
+  }
+
+  .shop-add-row input {
+    flex: 1;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 7px 10px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    background: var(--cream);
+    outline: none;
+  }
+
+  .shop-add-row input:focus { border-color: var(--sage); }
+
+  /* MODAL */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(28,26,23,0.6);
+    z-index: 200;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    backdrop-filter: blur(4px);
+  }
+
+  .modal-overlay.open { display: flex; }
+
+  .modal {
+    background: var(--warm-white);
+    border-radius: 16px;
+    width: 100%;
+    max-width: 680px;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 24px 60px rgba(0,0,0,0.25);
+    animation: modalIn 0.25s ease;
+  }
+
+  @keyframes modalIn {
+    from { opacity: 0; transform: translateY(16px) scale(0.98); }
+    to { opacity: 1; transform: none; }
+  }
+
+  .modal-header {
+    padding: 24px 28px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .modal-header h2 {
+    font-family: 'Playfair Display', serif;
+    font-size: 24px;
+    font-weight: 400;
+  }
+
+  .modal-close {
+    background: none;
+    border: none;
+    font-size: 22px;
+    cursor: pointer;
+    color: var(--sage);
+    padding: 4px;
+    line-height: 1;
+  }
+
+  .modal-close:hover { color: var(--terracotta); }
+
+  .modal-body { padding: 24px 28px; }
+
+  .form-row { margin-bottom: 18px; }
+
+  .form-row label {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    color: var(--moss);
+    margin-bottom: 6px;
+  }
+
+  .form-row input, .form-row textarea, .form-row select {
+    width: 100%;
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    background: var(--cream);
+    color: var(--ink);
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .form-row input:focus, .form-row textarea:focus, .form-row select:focus {
+    border-color: var(--terracotta);
+  }
+
+  .form-row textarea { min-height: 100px; resize: vertical; }
+
+  .form-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+  .modal-footer {
+    padding: 20px 28px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+  }
+
+  /* PHOTO IMPORT */
+  .photo-drop {
+    border: 2px dashed var(--border);
+    border-radius: 12px;
+    padding: 40px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: var(--cream);
+  }
+
+  .photo-drop:hover, .photo-drop.dragover {
+    border-color: var(--terracotta);
+    background: rgba(196,98,45,0.04);
+  }
+
+  .photo-drop .drop-icon { font-size: 40px; margin-bottom: 12px; }
+  .photo-drop h3 { font-family: 'Playfair Display', serif; font-size: 18px; margin-bottom: 6px; }
+  .photo-drop p { color: var(--sage); font-size: 13px; }
+
+  .photo-drop input[type="file"] { display: none; }
+
+  .photo-preview {
+    display: none;
+    gap: 20px;
+    margin-top: 20px;
+  }
+
+  .photo-preview.visible { display: grid; grid-template-columns: 1fr 1fr; }
+
+  .photo-preview img {
+    width: 100%;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+  }
+
+  .extracted-recipe { background: var(--cream); border-radius: 10px; padding: 16px; font-size: 13px; line-height: 1.7; }
+  .extracted-recipe h4 { font-family: 'Playfair Display', serif; font-size: 16px; margin-bottom: 8px; }
+
+  /* PROCESSING */
+  .processing-state {
+    display: none;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 20px;
+    background: var(--light-sage);
+    border-radius: 10px;
+    margin-top: 16px;
+    font-size: 14px;
+    color: var(--moss);
+  }
+
+  .processing-state.visible { display: flex; }
+
+  .spinner {
+    width: 20px; height: 20px;
+    border: 2px solid var(--border);
+    border-top-color: var(--terracotta);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* RECIPE DETAIL */
+  .recipe-detail-grid { display: grid; grid-template-columns: 1fr 1.5fr; gap: 32px; }
+
+  .nutrition-table { width: 100%; border-collapse: collapse; margin-top: 12px; }
+  .nutrition-table th { text-align: left; font-size: 11px; text-transform: uppercase; color: var(--sage); padding: 6px 0; border-bottom: 1px solid var(--border); }
+  .nutrition-table td { padding: 8px 0; font-size: 14px; border-bottom: 1px solid rgba(0,0,0,0.05); }
+  .nutrition-table td:last-child { font-weight: 600; color: var(--terracotta); text-align: right; }
+
+  .ingredients-list { list-style: none; }
+  .ingredients-list li { padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 14px; display: flex; justify-content: space-between; }
+  .ingredients-list li span { color: var(--sage); font-size: 13px; }
+
+  .steps-list { list-style: none; counter-reset: steps; }
+  .steps-list li {
+    counter-increment: steps;
+    padding: 12px 0 12px 48px;
+    border-bottom: 1px solid var(--border);
+    font-size: 14px;
+    line-height: 1.6;
+    position: relative;
+  }
+
+  .steps-list li::before {
+    content: counter(steps);
+    position: absolute;
+    left: 0;
+    top: 14px;
+    width: 28px;
+    height: 28px;
+    background: var(--terracotta);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: 600;
+  }
+
+  /* PLAN PICKER */
+  .plan-recipe-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 12px;
+    max-height: 400px;
+    overflow-y: auto;
+    padding: 4px;
+  }
+
+  .plan-recipe-item {
+    border: 2px solid var(--border);
+    border-radius: 10px;
+    padding: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: center;
+  }
+
+  .plan-recipe-item:hover, .plan-recipe-item.selected {
+    border-color: var(--terracotta);
+    background: rgba(196,98,45,0.06);
+  }
+
+  .plan-recipe-item.plan-fav {
+    border-color: #e8c88a;
+    background: linear-gradient(135deg, #fffdf5, #fdf4e3);
+  }
+
+  .plan-recipe-item.plan-fav.selected {
+    border-color: var(--gold);
+    background: rgba(212,168,83,0.15);
+  }
+
+  .plan-recipe-item .emoji { font-size: 28px; margin-bottom: 6px; }
+  .plan-recipe-item .name { font-size: 13px; font-weight: 500; line-height: 1.3; }
+  .plan-recipe-item .kcal { font-size: 11px; color: var(--sage); margin-top: 4px; }
+
+  /* WEEK NAV */
+  .week-nav { display: flex; align-items: center; gap: 16px; margin-bottom: 20px; }
+  .week-nav button { background: none; border: 1px solid var(--border); border-radius: 6px; padding: 6px 12px; cursor: pointer; font-size: 18px; transition: all 0.2s; }
+  .week-nav button:hover { border-color: var(--moss); background: var(--light-sage); }
+  .week-nav .week-label { font-family: 'Playfair Display', serif; font-size: 18px; }
+
+  /* KCAL SUMMARY */
+  .kcal-bar {
+    background: var(--warm-white);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px 20px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  .kcal-bar h4 { font-size: 13px; font-weight: 600; color: var(--moss); flex: 1; }
+  .kcal-item { text-align: center; }
+  .kcal-item .num { font-family: 'Playfair Display', serif; font-size: 22px; color: var(--terracotta); }
+  .kcal-item .lbl { font-size: 11px; color: var(--sage); text-transform: uppercase; }
+
+  /* TOAST */
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    background: var(--ink);
+    color: var(--cream);
+    padding: 12px 20px;
+    border-radius: 8px;
+    font-size: 14px;
+    transform: translateY(80px);
+    opacity: 0;
+    transition: all 0.3s;
+    z-index: 999;
+    pointer-events: none;
+    border-left: 3px solid var(--terracotta);
+  }
+
+  .toast.show { transform: none; opacity: 1; }
+
+  .meal-slot.dinner-required {
+    border-color: var(--terracotta);
+    border-style: dashed;
+    background: rgba(196,98,45,0.04);
+    color: var(--terracotta);
+  }
+
+  .meal-slot.dinner-required:hover { background: rgba(196,98,45,0.10); }
+
+  .meal-slot.dinner-slot {
+    border-color: var(--terracotta);
+    background: rgba(196,98,45,0.07);
+  }
+
+  .meal-slot.optional-slot {
+    border-color: var(--sage);
+    background: rgba(122,140,110,0.05);
+  }
+
+  .optional-meals {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    margin-top: 5px;
+  }
+
+  .add-optional-btn {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    background: none;
+    border: 1.5px dashed var(--border);
+    border-radius: 7px;
+    padding: 5px 9px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 11px;
+    color: #AAA;
+    cursor: pointer;
+    transition: all 0.2s;
+    width: 100%;
+    text-align: left;
+  }
+
+  .add-optional-btn:hover {
+    border-color: var(--sage);
+    color: var(--sage);
+    background: var(--light-sage);
+  }
+
+  /* Make day cards taller to fit optional meals */
+  .day-card { min-height: 160px; }
+  @media (max-width: 900px) {
+    .week-grid { grid-template-columns: repeat(3, 1fr); }
+  }
+
+  @media (max-width: 600px) {
+    .week-grid { grid-template-columns: 1fr 1fr; }
+    .recipe-detail-grid { grid-template-columns: 1fr; }
+    nav button span { display: none; }
+    .page-header { flex-direction: column; align-items: flex-start; gap: 12px; }
+  }
+
+  /* EMPTY STATE */
+  .empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--sage);
+  }
+  .empty-state .empty-icon { font-size: 48px; margin-bottom: 16px; }
+  .empty-state h3 { font-family: 'Playfair Display', serif; font-size: 22px; color: var(--ink); margin-bottom: 8px; }
+  .empty-state p { font-size: 14px; max-width: 320px; margin: 0 auto 20px; }
+
+  .section-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 18px;
+    font-weight: 400;
+    margin-bottom: 12px;
+    color: var(--moss);
+  }
+
+  .search-bar {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+
+  .search-bar input {
+    flex: 1;
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 16px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    background: var(--warm-white);
+    outline: none;
+  }
+
+  .search-bar input:focus { border-color: var(--sage); }
+
+  /* SORT BAR */
+  .sort-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+  }
+
+  .sort-btn {
+    background: var(--warm-white);
+    border: 1.5px solid var(--border);
+    border-radius: 20px;
+    padding: 6px 14px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--sage);
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+
+  .sort-btn:hover { border-color: var(--moss); color: var(--moss); background: var(--light-sage); }
+  .sort-btn.active { background: var(--ink); border-color: var(--ink); color: var(--cream); }
+
+
+  /* FAVOURITES */
+  .fav-section-header {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 18px 20px;
+    background: linear-gradient(135deg, #fdf4e3, #fce8d0);
+    border-radius: 14px;
+    border: 1.5px solid #e8c88a;
+    margin-bottom: 4px;
+  }
+  .fav-section-icon { font-size: 32px; }
+
+  .fav-section-grid {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 20px;
+    margin-bottom: 8px;
+  }
+
+  .fav-divider {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 12px 0 4px;
+    color: var(--sage);
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+  }
+  .fav-divider::before, .fav-divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  .fav-card {
+    border-color: #e8c88a !important;
+    box-shadow: 0 2px 12px rgba(212,168,83,0.15);
+  }
+
+  .fav-badge {
+    position: absolute;
+    bottom: 10px;
+    left: 10px;
+    background: rgba(212,168,83,0.92);
+    color: #5a3800;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 9px;
+    border-radius: 20px;
+    backdrop-filter: blur(4px);
+    letter-spacing: 0.3px;
+  }
+
+  .header-household { display: flex; align-items: center; }
+  .household-pill {
+    display: flex; align-items: center; gap: 8px;
+    background: rgba(255,255,255,0.07);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 20px; padding: 5px 12px 5px 6px;
+    cursor: pointer; transition: background 0.2s;
+  }
+  .household-pill:hover { background: rgba(255,255,255,0.13); }
+  .hh-avatar-sm {
+    width: 28px; height: 28px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; flex-shrink: 0;
+  }
+  .avatar-option {
+    width: 44px; height: 44px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px; cursor: pointer;
+    border: 2.5px solid transparent;
+    background: rgba(255,255,255,0.06); transition: all 0.15s;
+  }
+  .avatar-option:hover { background: rgba(255,255,255,0.12); }
+  .avatar-option.selected { border-color: var(--gold); background: rgba(212,168,83,0.15); }
+  .member-row {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 12px; border-radius: 8px;
+    background: var(--cream); border: 1px solid var(--border);
+  }
+  .member-avatar { width: 36px; height: 36px; border-radius: 50%; display:flex;align-items:center;justify-content:center;font-size:20px;background:var(--light-sage); }
+  .member-name { font-size: 14px; font-weight: 500; }
+  .member-you { font-size: 11px; color: var(--sage); }
+  .member-joined { font-size: 11px; color: #BBB; margin-left: auto; }
+  .sync-dot { width:7px;height:7px;border-radius:50%;background:var(--sage);display:inline-block;margin-right:4px; }
+  .sync-dot.syncing { background:var(--gold);animation:pulse 1s ease infinite; }
+  .sync-dot.error { background:var(--terracotta); }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+  /* ---- SUPABASE SETUP BANNER ---- */
+  #setupBanner {
+    position:fixed;inset:0;z-index:9999;background:var(--ink);color:var(--cream);
+    display:flex;align-items:center;justify-content:center;padding:24px;
+  }
+  .setup-card {
+    background:var(--warm-white);color:var(--ink);border-radius:18px;
+    padding:36px 40px;max-width:560px;width:100%;
+  }
+  .setup-card h2 { font-family:'Playfair Display',serif;font-size:26px;margin-bottom:8px; }
+  .setup-card p  { font-size:14px;color:var(--sage);margin-bottom:20px;line-height:1.6; }
+  .setup-card ol { padding-left:20px;font-size:13px;color:var(--moss);line-height:2; }
+  .setup-card input {
+    width:100%;border:1.5px solid var(--border);border-radius:9px;
+    padding:11px 14px;font-size:14px;font-family:'DM Sans',sans-serif;
+    background:var(--cream);margin-bottom:10px;
+  }
+  .setup-card .setup-save {
+    width:100%;padding:13px;background:var(--terracotta);color:white;
+    border:none;border-radius:9px;font-size:15px;font-weight:600;cursor:pointer;
+    font-family:'DM Sans',sans-serif;margin-top:4px;
+  }
+</style>
+</head>
+<body>
+
+<!-- SUPABASE SETUP (hidden once configured) -->
+<div id="setupBanner" style="display:none">
+  <div class="setup-card">
+    <h2>🍳 Kokkens Hjørne — Opsætning</h2>
+    <p>For at data gemmes på tværs af enheder kræves en gratis Supabase-database. Opsætningen tager ~5 minutter og gøres kun <strong>én gang</strong>.</p>
+
+    <div style="display:flex;gap:8px;margin-bottom:18px">
+      <button id="tabSetupDB" onclick="showSetupTab('db')" style="flex:1;padding:9px;border-radius:8px;border:none;background:var(--terracotta);color:white;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer">1. Database</button>
+      <button id="tabSetupHost" onclick="showSetupTab('host')" style="flex:1;padding:9px;border-radius:8px;border:1.5px solid var(--border);background:var(--cream);color:var(--ink);font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer">2. Hosting (valgfri)</button>
+    </div>
+
+    <div id="setupTabDB">
+      <ol>
+        <li>Gå til <a href="https://supabase.com" target="_blank" style="color:var(--terracotta)">supabase.com</a> → Opret gratis projekt</li>
+        <li>Gå til <strong>Project Settings → API</strong></li>
+        <li>Kopiér <strong>Project URL</strong> og <strong>anon public key</strong></li>
+        <li>Kør dette SQL i <strong>SQL Editor</strong>:
+          <code style="font-size:11px;background:#f0ece4;padding:8px 10px;border-radius:6px;display:block;margin:8px 0;white-space:pre-wrap;line-height:1.7">create table if not exists households (
+  code text primary key,
+  name text,
+  members jsonb default '[]',
+  stores jsonb default '[]',
+  shop_day text default '',
+  data jsonb default '{}'
+);
+alter table households enable row level security;
+create policy "open" on households for all using (true);</code>
+        </li>
+      </ol>
+      <input id="sbUrl" placeholder="https://xxxx.supabase.co" style="margin-top:8px">
+      <input id="sbKey" placeholder="eyJhbGciOiJIUzI1NiIsInR5...">
+      <button class="setup-save" onclick="saveSupabaseConfig()">Gem & start →</button>
+      <p id="setupError" style="color:var(--terracotta);font-size:13px;margin-top:8px;display:none"></p>
+    </div>
+
+    <div id="setupTabHost" style="display:none">
+      <p style="margin-bottom:12px">Vil du åbne appen fra et fast link (så <strong>login huskes automatisk</strong> på din enhed)?</p>
+      <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px">
+        <div style="padding:14px;background:#f0ece4;border-radius:10px">
+          <div style="font-weight:600;font-size:14px;margin-bottom:4px">🚀 Netlify Drop <span style="font-weight:400;color:var(--sage);font-size:12px">— gratis, 1 minut</span></div>
+          <ol style="margin:0;padding-left:18px;font-size:13px;line-height:2;color:var(--moss)">
+            <li>Gå til <a href="https://app.netlify.com/drop" target="_blank" style="color:var(--terracotta)">app.netlify.com/drop</a></li>
+            <li>Træk HTML-filen ind på siden</li>
+            <li>Du får et fast link, f.eks. <code style="background:#e8e0d4;padding:1px 6px;border-radius:4px">https://dit-navn.netlify.app</code></li>
+          </ol>
+        </div>
+        <div style="padding:14px;background:#f0ece4;border-radius:10px">
+          <div style="font-weight:600;font-size:14px;margin-bottom:4px">📁 GitHub Pages <span style="font-weight:400;color:var(--sage);font-size:12px">— gratis, kræver GitHub-konto</span></div>
+          <ol style="margin:0;padding-left:18px;font-size:13px;line-height:2;color:var(--moss)">
+            <li>Opret nyt repository → upload HTML-filen som <code style="background:#e8e0d4;padding:1px 6px;border-radius:4px">index.html</code></li>
+            <li>Settings → Pages → Deploy from branch → main</li>
+            <li>Link: <code style="background:#e8e0d4;padding:1px 6px;border-radius:4px">https://brugernavn.github.io/repo</code></li>
+          </ol>
+        </div>
+      </div>
+      <p style="font-size:12px;color:var(--sage)">💡 Tilføj linket til din telefons hjemmeskærm (Del → "Føj til hjemmeskærm") for app-oplevelse uden browser-chrome.</p>
+    </div>
+  </div>
+</div>
+
+<header>
+  <div class="logo">Kokkens <span>Hjørne</span></div>
+  <nav>
+    <button class="active" onclick="showSection('plan')">📅 <span>Madplan</span></button>
+    <button onclick="showSection('recipes')">📖 <span>Opskrifter</span></button>
+    <button onclick="showSection('shopping')">🛒 <span>Indkøb</span></button>
+    <button onclick="showSection('import')">📷 <span>Scan</span></button>
+    <button onclick="showSection('madlog')">📓 <span>Madlog</span></button>
+    <button onclick="showSection('fridge')">🧊 <span>Køleskab</span></button>
+  </nav>
+  <div class="header-household" id="headerHousehold" style="display:none">
+    <div class="household-pill" onclick="openModal('householdModal')">
+      <span id="headerAvatar" class="hh-avatar-sm"></span>
+      <span id="headerHHName" style="font-size:13px;color:#ccc;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></span>
+      <span style="color:#666;font-size:11px">▾</span>
+    </div>
+  </div>
+</header>
+
+<main>
+
+  <!-- MADPLAN -->
+  <div id="plan" class="section active">
+    <div class="page-header">
+      <h1>Din <em>Madplan</em></h1>
+      <div style="display:flex;gap:10px">
+        <button class="btn btn-secondary" onclick="openInspirationModal()">✨ Inspiration</button>
+        <button class="btn btn-secondary" onclick="openDayPicker()">🛒 Generer indkøbsliste</button>
+        <button class="btn btn-primary" onclick="clearWeek()">✕ Ryd uge</button>
+      </div>
+    </div>
+
+    <div class="week-nav">
+      <button onclick="changeWeek(-1)">←</button>
+      <div class="week-label" id="weekLabel">Uge 11, 2026</div>
+      <button onclick="changeWeek(1)">→</button>
+    </div>
+
+    <div class="kcal-bar" id="kcalBar">
+      <h4>🔥 Ugentlige kalorier</h4>
+      <div class="kcal-item"><div class="num" id="totalKcal">0</div><div class="lbl">kcal i alt</div></div>
+      <div class="kcal-item"><div class="num" id="avgKcal">0</div><div class="lbl">kcal/dag</div></div>
+      <div class="kcal-item"><div class="num" id="plannedDays">0</div><div class="lbl">dage planlagt</div></div>
+    </div>
+
+    <div class="week-grid" id="weekGrid"></div>
+  </div>
+
+  <!-- OPSKRIFTER -->
+  <div id="recipes" class="section">
+    <div class="page-header">
+      <h1>Mine <em>Opskrifter</em></h1>
+      <div style="display:flex;gap:10px">
+        <button class="btn btn-secondary" onclick="openModal('importModal')">📷 Scan opskrift</button>
+        <button class="btn btn-primary" onclick="openModal('addRecipeModal')">+ Ny opskrift</button>
+      </div>
+    </div>
+
+    <div class="search-bar">
+      <input type="text" id="recipeSearch" placeholder="Søg i opskrifter..." oninput="filterRecipes()">
+    </div>
+
+    <div class="sort-bar" id="recipeSortBar">
+      <span style="font-size:12px;color:var(--sage);font-weight:500;text-transform:uppercase;letter-spacing:0.5px">Sortér:</span>
+      <button class="sort-btn active" data-sort="oldest" onclick="setSortMode('oldest')">🕐 Længst siden</button>
+      <button class="sort-btn" data-sort="newest" onclick="setSortMode('newest')">✅ Senest lavet</button>
+      <button class="sort-btn" data-sort="never" onclick="setSortMode('never')">🆕 Aldrig lavet</button>
+      <button class="sort-btn" data-sort="alpha" onclick="setSortMode('alpha')">🔤 A–Å</button>
+    </div>
+
+    <div class="recipe-grid" id="recipeGrid"></div>
+  </div>
+
+  <!-- INDKØBSLISTE -->
+  <div id="shopping" class="section">
+    <div class="page-header">
+      <h1><em>Indkøbs</em>liste</h1>
+      <div style="display:flex;gap:10px">
+        <button class="btn btn-secondary" onclick="openDayPicker()">🛒 Vælg dage</button>
+        <button class="btn btn-ghost" onclick="toggleStoreSortPanel()">🏪 Butiksgang</button>
+        <button class="btn btn-ghost" onclick="openPriceEstimate()">💰 Prisestimat</button>
+        <button class="btn btn-ghost" onclick="clearChecked()">✓ Fjern afkrydsede</button>
+        <button class="btn btn-primary" onclick="openModal('addShopModal')">+ Tilføj vare</button>
+      </div>
+    </div>
+
+    <!-- Store info bar -->
+    <div id="shopStoreBar" style="display:none;align-items:center;justify-content:space-between;background:var(--light-sage);border:1px solid var(--border);border-radius:10px;padding:10px 16px;margin-bottom:16px"></div>
+
+    <!-- Store Sort Panel -->
+    <div id="storeSortPanel" style="display:none" class="store-sort-panel">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+        <div>
+          <div style="font-family:'Playfair Display',serif;font-size:17px">Sorter efter butiksgang</div>
+          <div style="font-size:12px;color:var(--sage);margin-top:2px">Træk kategorierne i den rækkefølge du går i butikken</div>
+        </div>
+        <button class="btn btn-ghost btn-sm" onclick="toggleStoreSortPanel()">✕</button>
+      </div>
+      <div id="storeSortList"></div>
+      <div style="margin-top:12px;display:flex;gap:8px;justify-content:flex-end">
+        <button class="btn btn-ghost btn-sm" onclick="resetStoreSort()">↺ Nulstil</button>
+        <button class="btn btn-primary btn-sm" onclick="applyStoreSort()">Anvend ✓</button>
+      </div>
+    </div>
+
+    <!-- Day Picker Panel -->
+    <div id="dayPickerPanel" style="display:none;margin-bottom:24px;background:var(--warm-white);border:1.5px solid var(--border);border-radius:14px;padding:20px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+        <div>
+          <div style="font-family:'Playfair Display',serif;font-size:17px">Hvilke dage skal der købes ind til?</div>
+          <div style="font-size:12px;color:var(--sage);margin-top:2px">Retter markeret som rester springes automatisk over</div>
+        </div>
+        <button class="btn btn-ghost btn-sm" onclick="closeDayPicker()">✕</button>
+      </div>
+      <div id="dayPickerGrid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:8px;margin-bottom:16px"></div>
+      <div style="display:flex;gap:10px;justify-content:flex-end">
+        <button class="btn btn-ghost btn-sm" onclick="selectAllDays()">Vælg alle</button>
+        <button class="btn btn-ghost btn-sm" onclick="deselectAllDays()">Fravælg alle</button>
+        <button class="btn btn-primary" onclick="confirmGenerateFromDays()">Tilføj til indkøbsliste →</button>
+      </div>
+    </div>
+
+    <div id="shopProgress" style="margin-bottom:20px;display:none;">
+      <div style="display:flex;justify-content:space-between;margin-bottom:6px;font-size:13px;color:var(--sage)">
+        <span id="shopProgressText">0 af 0 varer</span>
+        <span id="shopProgressPct">0%</span>
+      </div>
+      <div style="height:6px;background:var(--border);border-radius:3px;overflow:hidden">
+        <div id="shopProgressBar" style="height:100%;background:var(--terracotta);border-radius:3px;width:0%;transition:width 0.4s"></div>
+      </div>
+    </div>
+
+    <div id="shopCategories" class="shop-categories"></div>
+
+    <!-- Price estimate panel (shown below list when active) -->
+    <div id="pricePanel" style="display:none;margin-top:24px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+        <div style="font-family:'Playfair Display',serif;font-size:20px">💰 Prisestimat & Tilbud</div>
+        <button class="btn btn-ghost btn-sm" onclick="document.getElementById('pricePanel').style.display='none'">✕</button>
+      </div>
+      <div id="priceProcessing" style="display:none;align-items:center;gap:12px;padding:14px 20px;background:var(--light-sage);border-radius:10px;margin-bottom:16px;font-size:14px;color:var(--moss)">
+        <div class="spinner"></div><span id="priceProcessingText">Analyserer priser og søger tilbudsavis...</span>
+      </div>
+      <div id="priceResults"></div>
+    </div>
+
+  <!-- SCAN IMPORT -->
+  <div id="import" class="section">
+    <div class="page-header">
+      <h1>Scan <em>Opskrift</em></h1>
+    </div>
+
+    <div style="max-width:680px">
+      <p style="color:var(--sage);font-size:14px;margin-bottom:24px;line-height:1.7">
+        Tag et billede af en opskrift fra en bog, avis eller et screenshot fra nettet. AI'en fjerner alle reklamer og unødvendig tekst og udtrækker kun den rene opskrift med ingredienser og fremgangsmåde.
+      </p>
+
+      <div class="photo-drop" id="photoDrop" onclick="document.getElementById('photoInput').click()">
+        <input type="file" id="photoInput" accept="image/*" onchange="handlePhotoUpload(event)">
+        <div class="drop-icon">📷</div>
+        <h3>Vælg eller tag et billede</h3>
+        <p>Klik for at vælge et billede, eller træk det hertil<br>Understøtter JPG, PNG, HEIC</p>
+      </div>
+
+      <div class="processing-state" id="processingState">
+        <div class="spinner"></div>
+        <span id="processingText">Analyserer opskrift og fjerner reklamer...</span>
+      </div>
+
+      <div class="photo-preview" id="photoPreview">
+        <div>
+          <p style="font-size:12px;font-weight:600;color:var(--sage);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">Dit billede</p>
+          <img id="uploadedPhoto" src="" alt="Uploaded recipe">
+        </div>
+        <div>
+          <p style="font-size:12px;font-weight:600;color:var(--sage);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">Renset opskrift</p>
+          <div class="extracted-recipe" id="extractedRecipe"></div>
+        </div>
+      </div>
+
+      <div id="importActions" style="display:none;margin-top:16px;display:none;gap:12px">
+        <button class="btn btn-primary" onclick="saveImportedRecipe()">💾 Gem opskrift</button>
+        <button class="btn btn-ghost" onclick="resetImport()">✕ Annuller</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MADLOG -->
+  <div id="madlog" class="section">
+    <div class="page-header">
+      <h1><em>Mad</em>log</h1>
+    </div>
+    <div id="madlogContent"></div>
+  </div>
+
+  <!-- KØLESKAB / FRIDGE -->
+  <div id="fridge" class="section">
+    <div class="page-header">
+      <h1>🧊 <em>Køleskabs</em>tjek</h1>
+    </div>
+    <div style="max-width:700px">
+      <p style="color:var(--sage);font-size:14px;margin-bottom:24px;line-height:1.7">
+        Fortæl hvad du har i køleskabet — eller tag et billede — og få forslag til retter du kan lave med det du har.
+      </p>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px">
+        <div>
+          <label style="font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:var(--sage);display:block;margin-bottom:8px">Skriv hvad du har</label>
+          <textarea id="fridgeText" rows="6" placeholder="f.eks.&#10;kyllingefilet&#10;kartofler&#10;gulerødder&#10;løg&#10;fløde&#10;hvidløg" style="width:100%;border:1.5px solid var(--border);border-radius:10px;padding:12px;font-family:'DM Sans',sans-serif;font-size:14px;background:var(--warm-white);resize:vertical;outline:none"></textarea>
+        </div>
+        <div>
+          <label style="font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:var(--sage);display:block;margin-bottom:8px">Eller tag et billede</label>
+          <div class="fridge-photo-drop" id="fridgePhotoDrop" onclick="document.getElementById('fridgePhotoInput').click()">
+            <input type="file" id="fridgePhotoInput" accept="image/*" onchange="handleFridgePhoto(event)" style="display:none">
+            <div id="fridgePhotoPreview" style="display:none;width:100%;height:100%;position:relative">
+              <img id="fridgePhotoImg" src="" style="width:100%;height:100%;object-fit:cover;border-radius:8px">
+              <button onclick="clearFridgePhoto();event.stopPropagation()" style="position:absolute;top:6px;right:6px;background:rgba(0,0,0,0.5);color:white;border:none;border-radius:50%;width:24px;height:24px;cursor:pointer;font-size:14px">×</button>
+            </div>
+            <div id="fridgePhotoPlaceholder">
+              <div style="font-size:32px;margin-bottom:8px">📸</div>
+              <div style="font-size:13px;color:var(--sage)">Klik for at tage billede af køleskabet</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <button class="btn btn-primary" onclick="getFridgeSuggestions()" style="width:100%;padding:14px">✨ Find retter jeg kan lave</button>
+      <div id="fridgeProcessing" style="display:none;align-items:center;gap:12px;padding:14px 20px;background:var(--light-sage);border-radius:10px;margin-top:16px;font-size:14px;color:var(--moss)">
+        <div class="spinner"></div><span>Analyserer køleskab og finder opskrifter...</span>
+      </div>
+      <div id="fridgeResults" style="margin-top:24px"></div>
+    </div>
+  </div>
+
+</main>
+
+<!-- ===== LOGIN SCREEN ===== -->
+<div id="loginScreen" style="display:none;position:fixed;inset:0;z-index:500;background:var(--ink);overflow-y:auto">
+  <div style="max-width:460px;margin:0 auto;padding:60px 24px 40px">
+    <div style="text-align:center;margin-bottom:48px">
+      <div style="font-size:52px;margin-bottom:12px">🏠</div>
+      <h1 style="font-family:'Playfair Display',serif;font-size:32px;color:var(--cream);font-weight:400">Kokkens <em style="color:var(--gold)">Hjørne</em></h1>
+      <p style="color:#888;font-size:14px;margin-top:8px">Delt madplan til hele husstanden</p>
+    </div>
+
+    <!-- TABS -->
+    <div style="display:flex;background:rgba(255,255,255,0.06);border-radius:10px;padding:4px;margin-bottom:28px">
+      <button id="tabJoin" onclick="switchLoginTab('join')" style="flex:1;padding:10px;border:none;border-radius:7px;background:var(--terracotta);color:white;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;cursor:pointer">Tilmeld husstand</button>
+      <button id="tabCreate" onclick="switchLoginTab('create')" style="flex:1;padding:10px;border:none;border-radius:7px;background:none;color:#888;font-family:'DM Sans',sans-serif;font-size:14px;cursor:pointer">Opret husstand</button>
+    </div>
+
+    <!-- JOIN PANEL -->
+    <div id="loginJoin">
+      <div style="margin-bottom:16px">
+        <label style="display:block;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.8px;color:#888;margin-bottom:6px">Husstands-kode</label>
+        <input id="joinCode" placeholder="f.eks. JENSEN42" style="width:100%;padding:13px 16px;border-radius:9px;border:1.5px solid #333;background:#111;color:var(--cream);font-family:'DM Sans',sans-serif;font-size:16px;outline:none;letter-spacing:1px;text-transform:uppercase" oninput="this.value=this.value.toUpperCase()">
+      </div>
+      <div style="margin-bottom:24px">
+        <label style="display:block;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.8px;color:#888;margin-bottom:6px">Dit navn</label>
+        <input id="joinName" placeholder="f.eks. Mads" style="width:100%;padding:13px 16px;border-radius:9px;border:1.5px solid #333;background:#111;color:var(--cream);font-family:'DM Sans',sans-serif;font-size:16px;outline:none">
+      </div>
+      <div style="margin-bottom:16px">
+        <label style="display:block;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.8px;color:#888;margin-bottom:10px">Vælg avatar</label>
+        <div id="joinAvatarPicker" style="display:flex;flex-wrap:wrap;gap:8px"></div>
+      </div>
+      <button onclick="joinHousehold()" style="width:100%;padding:14px;background:var(--terracotta);color:white;border:none;border-radius:9px;font-family:'DM Sans',sans-serif;font-size:15px;font-weight:600;cursor:pointer;margin-top:8px;transition:background 0.2s" onmouseover="this.style.background='#a0521f'" onmouseout="this.style.background='var(--terracotta)'">Tilmeld husstand →</button>
+      <p id="joinError" style="color:#e07060;font-size:13px;margin-top:10px;text-align:center;display:none"></p>
+    </div>
+
+    <!-- CREATE PANEL -->
+    <div id="loginCreate" style="display:none">
+      <div style="margin-bottom:16px">
+        <label style="display:block;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.8px;color:#888;margin-bottom:6px">Husstands navn</label>
+        <input id="createHHName" placeholder="f.eks. Familie Jensen" style="width:100%;padding:13px 16px;border-radius:9px;border:1.5px solid #333;background:#111;color:var(--cream);font-family:'DM Sans',sans-serif;font-size:16px;outline:none">
+      </div>
+      <div style="margin-bottom:16px">
+        <label style="display:block;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.8px;color:#888;margin-bottom:6px">Dit navn</label>
+        <input id="createName" placeholder="f.eks. Sofie" style="width:100%;padding:13px 16px;border-radius:9px;border:1.5px solid #333;background:#111;color:var(--cream);font-family:'DM Sans',sans-serif;font-size:16px;outline:none">
+      </div>
+      <div style="margin-bottom:24px">
+        <label style="display:block;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.8px;color:#888;margin-bottom:10px">Vælg avatar</label>
+        <div id="createAvatarPicker" style="display:flex;flex-wrap:wrap;gap:8px"></div>
+      </div>
+      <button onclick="createHousehold()" style="width:100%;padding:14px;background:var(--moss);color:white;border:none;border-radius:9px;font-family:'DM Sans',sans-serif;font-size:15px;font-weight:600;cursor:pointer;transition:background 0.2s" onmouseover="this.style.background='#374030'" onmouseout="this.style.background='var(--moss)'">Opret husstand →</button>
+      <p id="createError" style="color:#e07060;font-size:13px;margin-top:10px;text-align:center;display:none"></p>
+    </div>
+
+    <p style="text-align:center;color:#555;font-size:12px;margin-top:32px;line-height:1.6">Husstands-koden deles med familiemedlemmer<br>så alle kan tilgå den samme madplan</p>
+  </div>
+</div>
+
+<!-- HOUSEHOLD MODAL -->
+<div class="modal-overlay" id="householdModal">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-header">
+      <h2>🏠 <span id="hhModalName">Husstand</span></h2>
+      <button class="modal-close" onclick="closeModal('householdModal')">×</button>
+    </div>
+    <div class="modal-body">
+      <div style="background:var(--light-sage);border-radius:10px;padding:16px 20px;margin-bottom:20px;display:flex;align-items:center;gap:16px">
+        <div>
+          <div style="font-size:11px;text-transform:uppercase;letter-spacing:0.6px;color:var(--sage);margin-bottom:4px">Husstands-kode</div>
+          <div id="hhModalCode" style="font-size:26px;font-family:'Playfair Display',serif;letter-spacing:3px;color:var(--ink)"></div>
+        </div>
+        <button onclick="copyCode()" style="margin-left:auto;background:var(--terracotta);color:white;border:none;border-radius:7px;padding:8px 14px;font-size:13px;cursor:pointer">Kopiér</button>
+      </div>
+      <p style="font-size:13px;color:var(--sage);margin-bottom:16px">Del koden med familiemedlemmer så de kan tilmelde sig og bruge den samme madplan.</p>
+
+      <!-- Store settings -->
+      <div style="background:var(--warm-white);border:1.5px solid var(--border);border-radius:10px;padding:16px;margin-bottom:20px">
+        <div style="font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.6px;color:var(--moss);margin-bottom:12px">🛒 Indkøbsindstillinger</div>
+        <label style="font-size:12px;color:var(--sage);display:block;margin-bottom:8px">Butikker I handler i (vælg en eller flere)</label>
+        <div id="storeCheckboxes" style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:14px"></div>
+        <div>
+          <label style="font-size:12px;color:var(--sage);display:block;margin-bottom:4px">Fast indkøbsdag</label>
+          <select id="hhShopDaySelect" style="width:100%;border:1.5px solid var(--border);border-radius:8px;padding:8px 10px;font-size:13px;background:var(--cream);font-family:'DM Sans',sans-serif" onchange="saveStoreSettings()">
+            <option value="">Ingen fast dag</option>
+            <option value="Mandag">Mandag</option>
+            <option value="Tirsdag">Tirsdag</option>
+            <option value="Onsdag">Onsdag</option>
+            <option value="Torsdag">Torsdag</option>
+            <option value="Fredag">Fredag</option>
+            <option value="Lørdag">Lørdag</option>
+            <option value="Søndag">Søndag</option>
+          </select>
+        </div>
+      </div>
+
+      <div style="margin-bottom:8px;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.6px;color:var(--moss)">Medlemmer</div>
+      <div id="hhMembersList" style="display:flex;flex-direction:column;gap:8px;margin-bottom:20px"></div>
+      <div style="border-top:1px solid var(--border);padding-top:16px;display:flex;gap:10px">
+        <button onclick="leaveHousehold()" class="btn btn-ghost" style="flex:1;color:var(--terracotta);border-color:var(--terracotta)">Forlad husstand</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODALS -->
+
+<!-- Add Recipe Modal -->
+<div class="modal-overlay" id="addRecipeModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>Ny opskrift</h2>
+      <button class="modal-close" onclick="closeModal('addRecipeModal')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row"><label>Opskriftens navn *</label><input id="r_name" placeholder="f.eks. Pasta Bolognese"></div>
+      <div class="form-cols">
+        <div class="form-row"><label>Emoji / ikon</label><input id="r_emoji" placeholder="🍝" maxlength="2"></div>
+        <div class="form-row"><label>Kategori</label>
+          <select id="r_cat">
+            <option>Aftensmad</option><option>Frokost</option><option>Morgenmad</option><option>Snack</option><option>Dessert</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-cols">
+        <div class="form-row"><label>Tilberedningstid</label><input id="r_time" placeholder="30 min"></div>
+        <div class="form-row"><label>Portioner</label><input id="r_portions" placeholder="4" type="number" min="1"></div>
+      </div>
+      <div class="form-cols">
+        <div class="form-row"><label>Kcal pr. 100g</label><input id="r_kcal" placeholder="220" type="number"></div>
+        <div class="form-row"><label>Protein pr. 100g (g)</label><input id="r_protein" placeholder="12" type="number"></div>
+      </div>
+      <div class="form-row"><label>Ingredienser (én pr. linje, f.eks. "400g spaghetti")</label><textarea id="r_ingredients" rows="5" placeholder="400g spaghetti&#10;300g hakket oksekød&#10;1 løg&#10;2 fed hvidløg"></textarea></div>
+      <div class="form-row"><label>Fremgangsmåde</label><textarea id="r_steps" rows="5" placeholder="Kog pastaen al dente...&#10;Svits løg og kød..."></textarea></div>
+      <div class="form-row"><label>Tags (komma-adskilt)</label><input id="r_tags" placeholder="hurtig, familie, pasta"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('addRecipeModal')">Annuller</button>
+      <button class="btn btn-primary" onclick="saveRecipe()">💾 Gem opskrift</button>
+    </div>
+  </div>
+</div>
+
+<!-- Recipe Detail Modal -->
+<div class="modal-overlay" id="recipeDetailModal">
+  <div class="modal" style="max-width:780px">
+    <div class="modal-header">
+      <h2 id="det_title">Opskrift</h2>
+      <div style="display:flex;gap:8px;align-items:center">
+        <button class="btn btn-ghost btn-sm" id="wakeLockBtn" onclick="toggleWakeLock()" title="Hold skærmen tændt mens du laver mad" style="display:none">☀️ Hold skærm vågen</button>
+        <button class="btn btn-secondary btn-sm" id="det_addToPlan" onclick="addDetailToPlan()">+ Tilføj til madplan</button>
+        <button class="modal-close" onclick="closeModal('recipeDetailModal')">×</button>
+      </div>
+    </div>
+    <div class="modal-body" id="det_body"></div>
+  </div>
+</div>
+
+<!-- Add to Plan Modal -->
+<div class="modal-overlay" id="planModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>Vælg opskrift</h2>
+      <button class="modal-close" onclick="closeModal('planModal')">×</button>
+    </div>
+    <div class="modal-body">
+      <div id="planModalContext" style="background:var(--light-sage);border-radius:8px;padding:10px 14px;font-size:13px;color:var(--moss);margin-bottom:16px;font-weight:500"></div>
+      <div class="plan-recipe-grid" id="planRecipeGrid"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('planModal')">Annuller</button>
+      <button class="btn btn-primary" onclick="confirmAddToPlan()">Tilføj ✓</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Shopping Item Modal -->
+<div class="modal-overlay" id="addShopModal">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-header">
+      <h2>Tilføj vare</h2>
+      <button class="modal-close" onclick="closeModal('addShopModal')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row"><label>Varenavn *</label><input id="si_name" placeholder="f.eks. Æbler"></div>
+      <div class="form-cols">
+        <div class="form-row"><label>Mængde</label><input id="si_amount" placeholder="f.eks. 4 stk."></div>
+        <div class="form-row"><label>Kategori</label>
+          <select id="si_cat">
+            <option value="🥩 Kød & Fisk">🥩 Kød & Fisk</option>
+            <option value="🥦 Grøntsager">🥦 Grøntsager</option>
+            <option value="🥛 Mejeri">🥛 Mejeri</option>
+            <option value="🍞 Brød & Korn">🍞 Brød & Korn</option>
+            <option value="🥫 Tørvarer">🥫 Tørvarer</option>
+            <option value="🧴 Andet">🧴 Andet</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('addShopModal')">Annuller</button>
+      <button class="btn btn-primary" onclick="addShopItem()">Tilføj ✓</button>
+    </div>
+  </div>
+</div>
+
+<!-- INSPIRATION MODAL -->
+<div class="modal-overlay" id="inspirationModal">
+  <div class="modal" style="max-width:640px">
+    <div class="modal-header">
+      <h2>✨ Inspiration til madplanen</h2>
+      <button class="modal-close" onclick="closeModal('inspirationModal')">×</button>
+    </div>
+    <div class="modal-body">
+      <div id="inspirationContent"></div>
+    </div>
+  </div>
+</div>
+
+
+<script>
+// ===== SUPABASE CONFIG & STORAGE =====
+const AVATARS = ['👨','👩','👧','👦','🧑','👴','👵','🧒','👨‍🍳','👩‍🍳','🧑‍🍳','🐱','🐶','🦊','🐻','🦁'];
+let currentHousehold = null; // { code, name, memberName, memberAvatar, memberId }
+let syncTimer = null;
+let _sb = null; // Supabase client
+let _realtimeChannel = null;
+
+const localSessionKey = 'hh_session';
+const SB_URL_KEY = 'sb_url';
+const SB_KEY_KEY = 'sb_key';
+
+function getSupabase() {
+  if (_sb) return _sb;
+  const url = localStorage.getItem(SB_URL_KEY);
+  const key = localStorage.getItem(SB_KEY_KEY);
+  if (!url || !key) return null;
+  _sb = supabase.createClient(url, key);
+  return _sb;
+}
+
+async function saveSupabaseConfig() {
+  const url = document.getElementById('sbUrl').value.trim().replace(/\/$/, '');
+  const key = document.getElementById('sbKey').value.trim();
+  const errEl = document.getElementById('setupError');
+  errEl.style.display = 'none';
+  if (!url || !key) { errEl.textContent = 'Udfyld begge felter'; errEl.style.display = 'block'; return; }
+  _sb = null;
+  localStorage.setItem(SB_URL_KEY, url);
+  localStorage.setItem(SB_KEY_KEY, key);
+  // Test connection
+  try {
+    const client = supabase.createClient(url, key);
+    const { error } = await client.from('households').select('code').limit(1);
+    if (error) throw error;
+    _sb = client;
+    document.getElementById('setupBanner').style.display = 'none';
+    initApp();
+  } catch(e) {
+    localStorage.removeItem(SB_URL_KEY);
+    localStorage.removeItem(SB_KEY_KEY);
+    _sb = null;
+    errEl.textContent = 'Kunne ikke forbinde: ' + e.message;
+    errEl.style.display = 'block';
+  }
+}
+
+async function sbGet(code) {
+  const sb = getSupabase(); if (!sb) return null;
+  const { data } = await sb.from('households').select('*').eq('code', code).single();
+  return data;
+}
+
+async function sbUpsert(row) {
+  const sb = getSupabase(); if (!sb) return;
+  await sb.from('households').upsert(row, { onConflict: 'code' });
+}
+
+// ---- HOUSEHOLD DATA ----
+async function loadHouseholdData() {
+  const row = await sbGet(currentHousehold.code);
+  if (row?.data && Object.keys(row.data).length) {
+    recipes     = row.data.recipes     || getDefaultRecipes();
+    weekPlan    = row.data.weekPlan    || {};
+    shoppingList = row.data.shoppingList || [];
+  } else {
+    recipes = getDefaultRecipes();
+    weekPlan = {};
+    shoppingList = [];
+    await saveHouseholdData();
+  }
+  // Restore store settings
+  if (row?.stores?.length) householdStores = row.stores;
+  if (row?.shop_day) householdShopDay = row.shop_day;
+}
+
+async function saveHouseholdData() {
+  if (!currentHousehold) return;
+  setSyncState('syncing');
+  try {
+    await sbUpsert({ code: currentHousehold.code, data: { recipes, weekPlan, shoppingList } });
+    setSyncState('ok');
+  } catch(e) { setSyncState('error'); }
+}
+
+function save() {
+  if (syncTimer) clearTimeout(syncTimer);
+  syncTimer = setTimeout(saveHouseholdData, 600);
+}
+
+function setSyncState(state) {
+  const dot = document.getElementById('syncDot');
+  if (!dot) return;
+  dot.className = 'sync-dot' + (state === 'syncing' ? ' syncing' : state === 'error' ? ' error' : '');
+}
+
+// ===== DEFAULT RECIPES =====
+function getDefaultRecipes() {
+  return [
+    { id:1, name:'Pasta Bolognese', emoji:'🍝', category:'Aftensmad', time:'45 min', portions:4, kcal:210, protein:14, tags:['pasta','familie','klassiker'],
+      ingredients:['400g spaghetti','300g hakket oksekød','1 løg','2 fed hvidløg','400g tomater på dåse','2 spsk tomatpuré','1 tsk oregano'],
+      steps:['Kog pasta al dente i saltet vand.','Svits hakket løg og hvidløg i olivenolie.','Brun oksekødet og krydr med salt og peber.','Tilsæt tomater og tomatpuré, lad simre 20 min.','Server med pasta og revet parmesan.'] },
+    { id:2, name:'Græsk Salat', emoji:'🥗', category:'Frokost', time:'15 min', portions:2, kcal:120, protein:5, tags:['sund','hurtig','vegetar'],
+      ingredients:['1 agurk','4 tomater','100g fetaost','1 rødløg','sort oliven','olivenolie','oregano'],
+      steps:['Skær alle grøntsager i tern.','Anret i en skål.','Top med fetaost og oliven.','Dryp med olivenolie og drys oregano over.'] },
+    { id:3, name:'Pandekager', emoji:'🥞', category:'Morgenmad', time:'20 min', portions:4, kcal:195, protein:7, tags:['morgenmad','børn','hurtig'],
+      ingredients:['2 æg','3 dl mælk','150g mel','1 spsk sukker','lidt salt','smør til stegning'],
+      steps:['Bland æg, mælk og mel til en glat dej.','Lad hvile 10 min.','Steg gyldne pandekager i smør.','Server med syltetøj eller sukker.'] },
+    { id:4, name:'Kylling Tikka Masala', emoji:'🍛', category:'Aftensmad', time:'60 min', portions:4, kcal:185, protein:22, tags:['krydret','indisk','hygge'],
+      ingredients:['600g kyllingefilet','400ml kokosmælk','400g tomater','2 løg','3 fed hvidløg','2 spsk tikka masala krydderi','1 dl fløde'],
+      steps:['Mariner kylling i krydderi i 30 min.','Svits løg og hvidløg.','Tilsæt kylling og brun.','Hæld tomater og kokosmælk ved.','Simr 20 min, tilsæt fløde og server med ris.'] }
+  ];
+}
+
+let recipes = [];
+let weekPlan = {};
+let shoppingList = [];
+let currentWeekOffset = 0;
+let selectedPlanRecipeId = null;
+let currentPlanSlot = null;
+let importedRecipeData = null;
+let currentDetailRecipeId = null;
+
+const DAYS = ['Mandag','Tirsdag','Onsdag','Torsdag','Fredag','Lørdag','Søndag'];
+const OPTIONAL_MEALS = ['breakfast','lunch','snack'];
+const MEAL_LABELS = {breakfast:'Morgenmad', lunch:'Frokost', dinner:'Aftensmad', snack:'Snack'};
+
+// ===== LOGIN / HOUSEHOLD =====
+let selectedLoginAvatar = AVATARS[0];
+let selectedCreateAvatar = AVATARS[1];
+
+function buildAvatarPicker(containerId, onSelect, initial) {
+  const el = document.getElementById(containerId);
+  el.innerHTML = AVATARS.map((a, i) =>
+    `<div class="avatar-option ${a === initial ? 'selected' : ''}" onclick="selectAvatar('${containerId}', '${a}', this)">${a}</div>`
+  ).join('');
+}
+
+function selectAvatar(pickerId, avatar, el) {
+  document.querySelectorAll(`#${pickerId} .avatar-option`).forEach(e => e.classList.remove('selected'));
+  el.classList.add('selected');
+  if (pickerId === 'joinAvatarPicker') selectedLoginAvatar = avatar;
+  else selectedCreateAvatar = avatar;
+}
+
+function switchLoginTab(tab) {
+  const isJoin = tab === 'join';
+  document.getElementById('loginJoin').style.display = isJoin ? 'block' : 'none';
+  document.getElementById('loginCreate').style.display = isJoin ? 'none' : 'block';
+  document.getElementById('tabJoin').style.background = isJoin ? 'var(--terracotta)' : 'none';
+  document.getElementById('tabJoin').style.color = isJoin ? 'white' : '#888';
+  document.getElementById('tabCreate').style.background = isJoin ? 'none' : 'var(--moss)';
+  document.getElementById('tabCreate').style.color = isJoin ? '#888' : 'white';
+}
+
+async function createHousehold() {
+  const hhName = document.getElementById('createHHName').value.trim();
+  const memberName = document.getElementById('createName').value.trim();
+  const errEl = document.getElementById('createError');
+  errEl.style.display = 'none';
+
+  if (!hhName) { errEl.textContent = 'Indtast et husstandsnavn'; errEl.style.display = 'block'; return; }
+  if (!memberName) { errEl.textContent = 'Indtast dit navn'; errEl.style.display = 'block'; return; }
+
+  const consonants = hhName.toUpperCase().replace(/[^A-Z0-9]/g, '').replace(/[AEIOU]/g, '').substring(0, 4) || 'HH';
+  const code = consonants + Math.floor(10 + Math.random() * 90);
+
+  const memberId = 'mbr' + Date.now();
+  const row = {
+    code,
+    name: hhName,
+    members: [{ id: memberId, name: memberName, avatar: selectedCreateAvatar, joinedAt: new Date().toLocaleDateString('da-DK') }],
+    stores: [],
+    shop_day: '',
+    data: {}
+  };
+
+  try {
+    await sbUpsert(row);
+  } catch(e) {
+    errEl.textContent = 'Fejl ved oprettelse: ' + e.message;
+    errEl.style.display = 'block';
+    return;
+  }
+
+  currentHousehold = { code, name: hhName, memberName, memberAvatar: selectedCreateAvatar, memberId };
+  localStorage.setItem(localSessionKey, JSON.stringify(currentHousehold));
+
+  await loadHouseholdData();
+  enterApp();
+}
+
+async function joinHousehold() {
+  const code = document.getElementById('joinCode').value.trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
+  const memberName = document.getElementById('joinName').value.trim();
+  const errEl = document.getElementById('joinError');
+  errEl.style.display = 'none';
+
+  if (!code) { errEl.textContent = 'Indtast husstands-koden'; errEl.style.display = 'block'; return; }
+  if (!memberName) { errEl.textContent = 'Indtast dit navn'; errEl.style.display = 'block'; return; }
+
+  const row = await sbGet(code);
+  if (!row) { errEl.textContent = 'Husstands-koden findes ikke. Tjek koden og prøv igen.'; errEl.style.display = 'block'; return; }
+
+  const memberId = 'mbr' + Date.now();
+  const members = [...(row.members || []), { id: memberId, name: memberName, avatar: selectedLoginAvatar, joinedAt: new Date().toLocaleDateString('da-DK') }];
+  await sbUpsert({ code, members });
+
+  currentHousehold = { code, name: row.name, memberName, memberAvatar: selectedLoginAvatar, memberId };
+  localStorage.setItem(localSessionKey, JSON.stringify(currentHousehold));
+
+  await loadHouseholdData();
+  enterApp();
+}
+
+function enterApp() {
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('headerHousehold').style.display = 'flex';
+  document.getElementById('headerAvatar').textContent = currentHousehold.memberAvatar;
+  document.getElementById('headerAvatar').style.background = 'none';
+  document.getElementById('headerHHName').textContent = currentHousehold.name;
+
+  if (!document.getElementById('syncDot')) {
+    const dot = document.createElement('span');
+    dot.id = 'syncDot';
+    dot.className = 'sync-dot';
+    dot.title = 'Synkroniseret';
+    document.querySelector('.household-pill').appendChild(dot);
+  }
+
+  renderPlan();
+  renderRecipes();
+  renderShopping();
+
+  // Supabase realtime — subscribe to changes on this household row
+  const sb = getSupabase();
+  if (sb && _realtimeChannel) { sb.removeChannel(_realtimeChannel); }
+  if (sb) {
+    _realtimeChannel = sb.channel('hh-' + currentHousehold.code)
+      .on('postgres_changes', {
+        event: 'UPDATE', schema: 'public', table: 'households',
+        filter: `code=eq.${currentHousehold.code}`
+      }, payload => {
+        const d = payload.new?.data;
+        if (d) {
+          recipes      = d.recipes      || recipes;
+          weekPlan     = d.weekPlan     || weekPlan;
+          shoppingList = d.shoppingList || shoppingList;
+        }
+        if (payload.new?.stores) householdStores = payload.new.stores;
+        if (payload.new?.shop_day !== undefined) householdShopDay = payload.new.shop_day;
+        const activeSection = document.querySelector('.section.active')?.id;
+        if (activeSection === 'plan')     renderPlan();
+        if (activeSection === 'recipes')  renderRecipes();
+        if (activeSection === 'shopping') renderShopping();
+      })
+      .subscribe();
+  }
+}
+
+async function openHouseholdModal() {
+  document.getElementById('hhModalName').textContent = currentHousehold.name;
+  document.getElementById('hhModalCode').textContent = currentHousehold.code;
+  const row = await sbGet(currentHousehold.code);
+  if (row?.stores) householdStores = row.stores;
+  if (row?.shop_day !== undefined) householdShopDay = row.shop_day;
+  // Render multi-store checkboxes
+  renderStoreCheckboxes();
+  document.getElementById('hhShopDaySelect').value = householdShopDay || '';
+  const members = row?.members || [];
+  document.getElementById('hhMembersList').innerHTML = members.map(m =>
+    `<div class="member-row">
+      <div class="member-avatar">${m.avatar}</div>
+      <div>
+        <div class="member-name">${m.name} ${m.id === currentHousehold.memberId ? '<span class="member-you">(dig)</span>' : ''}</div>
+        <div class="member-joined">Tilmeldt ${m.joinedAt}</div>
+      </div>
+    </div>`
+  ).join('');
+  openModal('householdModal');
+}
+
+function copyCode() {
+  navigator.clipboard.writeText(currentHousehold.code).catch(() => {});
+  toast(`Kode kopieret: ${currentHousehold.code}`);
+}
+
+function leaveHousehold() {
+  if (!confirm('Er du sikker på, at du vil forlade husstanden?')) return;
+  localStorage.removeItem(localSessionKey);
+  currentHousehold = null;
+  householdStores = [];
+  householdShopDay = '';
+  const sb = getSupabase();
+  if (sb && _realtimeChannel) { sb.removeChannel(_realtimeChannel); _realtimeChannel = null; }
+  closeModal('householdModal');
+  document.getElementById('headerHousehold').style.display = 'none';
+  showLoginScreen();
+}
+
+function showLoginScreen() {
+  document.getElementById('loginScreen').style.display = 'block';
+  buildAvatarPicker('joinAvatarPicker', null, selectedLoginAvatar);
+  buildAvatarPicker('createAvatarPicker', null, selectedCreateAvatar);
+}
+
+// ===== NAVIGATION =====
+function showSection(id) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  const idx = ['plan','recipes','shopping','import','madlog','fridge'].indexOf(id);
+  if (idx >= 0) document.querySelectorAll('nav button')[idx].classList.add('active');
+  if(id === 'recipes') renderRecipes();
+  if(id === 'shopping') renderShopping();
+  if(id === 'plan') renderPlan();
+  if(id === 'madlog') renderMadlog();
+}
+
+// ===== TOAST =====
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// ===== MODAL =====
+// ===== WAKE LOCK =====
+let _wakeLock = null;
+
+async function toggleWakeLock() {
+  const btn = document.getElementById('wakeLockBtn');
+  if (_wakeLock) {
+    await releaseWakeLock();
+  } else {
+    try {
+      _wakeLock = await navigator.wakeLock.request('screen');
+      btn.textContent = '☀️ Skærm holdes vågen';
+      btn.style.background = 'rgba(212,168,83,0.15)';
+      btn.style.borderColor = 'var(--gold)';
+      btn.style.color = '#7a5c00';
+      _wakeLock.addEventListener('release', () => {
+        _wakeLock = null;
+        resetWakeLockBtn();
+      });
+    } catch(e) {
+      toast('Wake Lock ikke understøttet på denne enhed');
+    }
+  }
+}
+
+async function releaseWakeLock() {
+  if (_wakeLock) { await _wakeLock.release(); _wakeLock = null; }
+  resetWakeLockBtn();
+}
+
+function resetWakeLockBtn() {
+  const btn = document.getElementById('wakeLockBtn');
+  if (!btn) return;
+  btn.textContent = '☀️ Hold skærm vågen';
+  btn.style.background = '';
+  btn.style.borderColor = '';
+  btn.style.color = '';
+}
+
+function openModal(id) {
+  if (id === 'householdModal') { openHouseholdModal(); return; }
+  document.getElementById(id).classList.add('open');
+  if (id === 'planModal') renderPlanRecipeGrid();
+  if (id === 'recipeDetailModal') {
+    const btn = document.getElementById('wakeLockBtn');
+    if (btn) btn.style.display = 'navigator' in window && 'wakeLock' in navigator ? 'inline-flex' : 'none';
+  }
+}
+
+function closeModal(id) {
+  document.getElementById(id).classList.remove('open');
+  if (id === 'recipeDetailModal') releaseWakeLock();
+}
+
+document.querySelectorAll('.modal-overlay').forEach(o => {
+  o.addEventListener('click', e => { if(e.target === o) o.classList.remove('open'); });
+});
+
+// ===== PLAN =====
+function getWeekKey(offset) {
+  const d = new Date();
+  d.setDate(d.getDate() - d.getDay() + 1 + offset * 7);
+  const wn = String(getWeekNumber(d)).padStart(2, '0');
+  return `${d.getFullYear()}-W${wn}`;
+}
+
+function getWeekNumber(d) {
+  const date = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+  const day = date.getUTCDay() || 7;
+  date.setUTCDate(date.getUTCDate() + 4 - day);
+  const yearStart = new Date(Date.UTC(date.getUTCFullYear(),0,1));
+  return Math.ceil((((date - yearStart) / 86400000) + 1) / 7);
+}
+
+function getWeekDates(offset) {
+  const d = new Date();
+  d.setDate(d.getDate() - d.getDay() + 1 + offset * 7);
+  return Array.from({length:7}, (_, i) => {
+    const dd = new Date(d);
+    dd.setDate(d.getDate() + i);
+    return dd;
+  });
+}
+
+function changeWeek(dir) {
+  currentWeekOffset += dir;
+  renderPlan();
+}
+
+function renderPlan() {
+  const wk = getWeekKey(currentWeekOffset);
+  const dates = getWeekDates(currentWeekOffset);
+  const plan = weekPlan[wk] || {};
+
+  document.getElementById('weekLabel').textContent = `Uge ${getWeekNumber(new Date())+ currentWeekOffset}, ${new Date().getFullYear() + (currentWeekOffset < -26 ? -1 : currentWeekOffset > 26 ? 1 : 0)}`;
+
+  let totalKcal = 0, plannedDays = 0;
+
+  const grid = document.getElementById('weekGrid');
+  grid.innerHTML = DAYS.map((day, i) => {
+    const dayPlan = plan[i] || {};
+    const enabledOptional = dayPlan._optional || [];
+    const isLeftover = !!dayPlan._leftover;
+    let dayKcal = 0;
+
+    // --- DINNER (always shown, required) ---
+    const dinnerRecipeId = dayPlan['dinner'];
+    let dinnerSlot;
+    if(dinnerRecipeId) {
+      const r = recipes.find(r => r.id === dinnerRecipeId);
+      if(r && !isLeftover) dayKcal += r.kcal * 2.5;
+      const leftoverBadge = isLeftover
+        ? `<span class="leftover-plan-badge" title="Rester fra dagen før — ingredienser tilføjes ikke til indkøbslisten">🥡 Rester</span>`
+        : '';
+      dinnerSlot = `<div class="meal-slot filled dinner-slot${isLeftover ? ' is-leftover' : ''}">
+          <div style="flex:1">
+            <span class="meal-type-label">🍽 Aftensmad</span>
+            ${r?.emoji || '🍽️'} ${r?.name || ''}
+            ${leftoverBadge}
+          </div>
+          <button class="leftover-btn${isLeftover ? ' active' : ''}" title="${isLeftover ? 'Fjern rester-markering' : 'Marker som rester fra dagen før'}" onclick="toggleLeftover(${i});event.stopPropagation()">🥡</button>
+          <button class="meal-remove" onclick="removeMeal(${i},'dinner');event.stopPropagation()">✕</button>
+        </div>`;
+    } else {
+      dinnerSlot = `<div class="meal-slot dinner-required" onclick="openPlanModal(${i},'dinner')">
+        <span style="font-size:18px">+</span>
+        <div><span class="meal-type-label">🍽 Aftensmad</span><span>Tilføj aftensmad</span></div>
+      </div>`;
+    }
+    if(dinnerRecipeId) plannedDays++;
+    totalKcal += dayKcal;
+
+    // --- OPTIONAL MEALS ---
+    const optionalSlots = OPTIONAL_MEALS.map(type => {
+      const label = MEAL_LABELS[type];
+      const icon = type === 'breakfast' ? '🌅' : type === 'lunch' ? '☀️' : '🍎';
+      const enabled = enabledOptional.includes(type);
+      const recipeId = dayPlan[type];
+
+      if (!enabled) {
+        return `<button class="add-optional-btn" onclick="toggleOptional(${i},'${type}')">
+          <span>${icon}</span> + ${label}
+        </button>`;
+      }
+
+      if(recipeId) {
+        const r = recipes.find(r => r.id === recipeId);
+        if(r) dayKcal += r.kcal * 1.5;
+        return `<div class="meal-slot filled optional-slot">
+          <div style="flex:1">
+            <span class="meal-type-label">${icon} ${label}</span>
+            ${r ? r.emoji : '🍽️'} ${r ? r.name : ''}
+          </div>
+          <button class="meal-remove" onclick="removeMeal(${i},'${type}');event.stopPropagation()">✕</button>
+        </div>`;
+      }
+      return `<div class="meal-slot optional-slot" onclick="openPlanModal(${i},'${type}')">
+        <span style="font-size:18px">+</span>
+        <div><span class="meal-type-label">${icon} ${label}</span><span>Tilføj</span></div>
+        <button class="meal-remove" style="opacity:1;color:var(--sage)" onclick="toggleOptional(${i},'${type}');event.stopPropagation()" title="Fjern ${label}">−</button>
+      </div>`;
+    }).join('');
+
+    const dateStr = `${dates[i].getDate()}/${dates[i].getMonth()+1}`;
+    return `<div class="day-card${isLeftover ? ' leftover-day' : ''}">
+      <div class="day-header">
+        <span>${day}</span>
+        <span class="date">${dateStr}</span>
+      </div>
+      <div class="day-meals">
+        ${dinnerSlot}
+        <div class="optional-meals">${optionalSlots}</div>
+        ${dayKcal > 0 ? `<div style="text-align:center;font-size:11px;color:var(--sage);margin-top:4px">~${Math.round(dayKcal)} kcal${isLeftover ? ' (rester)' : ''}</div>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('totalKcal').textContent = Math.round(totalKcal);
+  document.getElementById('avgKcal').textContent = plannedDays ? Math.round(totalKcal / plannedDays) : 0;
+  document.getElementById('plannedDays').textContent = plannedDays;
+}
+
+function toggleLeftover(dayIdx) {
+  const wk = getWeekKey(currentWeekOffset);
+  if (!weekPlan[wk]) weekPlan[wk] = {};
+  if (!weekPlan[wk][dayIdx]) weekPlan[wk][dayIdx] = {};
+  weekPlan[wk][dayIdx]._leftover = !weekPlan[wk][dayIdx]._leftover;
+  save();
+  renderPlan();
+  const isNow = weekPlan[wk][dayIdx]._leftover;
+  toast(isNow ? '🥡 Markeret som rester — springes over ved generering af indkøbsliste' : 'Rester-markering fjernet');
+}
+
+function toggleOptional(day, type) {
+  const wk = getWeekKey(currentWeekOffset);
+  if(!weekPlan[wk]) weekPlan[wk] = {};
+  if(!weekPlan[wk][day]) weekPlan[wk][day] = {};
+  const enabled = weekPlan[wk][day]._optional || [];
+  if(enabled.includes(type)) {
+    weekPlan[wk][day]._optional = enabled.filter(t => t !== type);
+    delete weekPlan[wk][day][type];
+  } else {
+    weekPlan[wk][day]._optional = [...enabled, type];
+  }
+  save();
+  renderPlan();
+}
+
+function openPlanModal(day, mealType) {
+  currentPlanSlot = {day, mealType};
+  const dayName = DAYS[day];
+  const mealName = MEAL_LABELS[mealType];
+  const icons = {breakfast:'🌅',lunch:'☀️',dinner:'🍽',snack:'🍎'};
+  document.getElementById('planModalContext').textContent = `${icons[mealType]} ${mealName} — ${dayName}`;
+  openModal('planModal');
+}
+
+function removeMeal(day, mealType) {
+  const wk = getWeekKey(currentWeekOffset);
+  if(weekPlan[wk] && weekPlan[wk][day]) {
+    delete weekPlan[wk][day][mealType];
+    save();
+    renderPlan();
+    toast('Måltid fjernet');
+  }
+}
+
+function clearWeek() {
+  const wk = getWeekKey(currentWeekOffset);
+  weekPlan[wk] = {};
+  save();
+  renderPlan();
+  toast('Ugen er ryddet');
+}
+
+// ===== LAST COOKED TRACKING =====
+function getLastCookedMap() {
+  // Scan weekPlan entries — up to 13 weeks back (3 months) — find most recent date per recipe
+  const map = {}; // recipeId -> { dateStr, daysAgo, fullDate, allDates[] }
+  const today = new Date();
+  today.setHours(0,0,0,0);
+  const cutoff = new Date(today);
+  cutoff.setDate(today.getDate() - 91); // 13 weeks = ~3 months
+
+  Object.entries(weekPlan).forEach(([wkKey, wkData]) => {
+    const [year, week] = wkKey.split('-W').map(Number);
+    if (isNaN(year) || isNaN(week)) return;
+    const jan4 = new Date(year, 0, 4);
+    const weekStart = new Date(jan4);
+    weekStart.setDate(jan4.getDate() - (jan4.getDay() || 7) + 1 + (week - 1) * 7);
+
+    Object.entries(wkData).forEach(([dayIdx, dayPlan]) => {
+      if (!dayPlan || typeof dayPlan !== 'object') return;
+      const dayDate = new Date(weekStart);
+      dayDate.setDate(weekStart.getDate() + parseInt(dayIdx));
+      dayDate.setHours(0,0,0,0);
+
+      if (dayDate > today) return;      // future — skip
+      if (dayDate < cutoff) return;     // older than 3 months — skip
+
+      const daysAgo = Math.round((today - dayDate) / 86400000);
+
+      Object.entries(dayPlan).forEach(([mealType, recipeId]) => {
+        if (mealType === '_optional' || !recipeId || typeof recipeId !== 'number') return;
+        if (!map[recipeId]) map[recipeId] = { daysAgo, dateStr: '', fullDate: null, allDates: [] };
+
+        const ds = dayDate.toLocaleDateString('da-DK', {day:'numeric', month:'short'});
+        map[recipeId].allDates.push({ daysAgo, dateStr: ds, mealType });
+
+        if (daysAgo < map[recipeId].daysAgo) {
+          map[recipeId].daysAgo = daysAgo;
+          map[recipeId].dateStr = ds;
+          map[recipeId].fullDate = new Date(dayDate);
+        }
+      });
+    });
+  });
+
+  // Finalise dateStr for entries where it might still be empty
+  Object.values(map).forEach(entry => {
+    if (!entry.dateStr && entry.allDates.length > 0) {
+      const newest = entry.allDates.reduce((a, b) => a.daysAgo < b.daysAgo ? a : b);
+      entry.dateStr = newest.dateStr;
+      entry.daysAgo = newest.daysAgo;
+    }
+    // Sort allDates newest first
+    entry.allDates.sort((a, b) => a.daysAgo - b.daysAgo);
+  });
+
+  return map;
+}
+
+function formatDaysAgo(daysAgo) {
+  if (daysAgo === 0) return 'I dag';
+  if (daysAgo === 1) return 'I går';
+  if (daysAgo < 7) return `${daysAgo} dage siden`;
+  if (daysAgo < 14) return '1 uge siden';
+  if (daysAgo < 30) return `${Math.floor(daysAgo/7)} uger siden`;
+  if (daysAgo < 60) return '1 måned siden';
+  return `${Math.floor(daysAgo/30)} måneder siden`;
+}
+
+function getLastCookedBadge(daysAgo) {
+  if (daysAgo === undefined) return { color: '#AAA', bg: 'transparent', label: 'Aldrig lavet' };
+  if (daysAgo <= 7) return { color: '#888', bg: '#f0ede8', label: formatDaysAgo(daysAgo) };
+  if (daysAgo <= 14) return { color: 'var(--sage)', bg: 'var(--light-sage)', label: formatDaysAgo(daysAgo) };
+  if (daysAgo <= 30) return { color: 'var(--moss)', bg: '#d8e8cf', label: formatDaysAgo(daysAgo) };
+  return { color: 'var(--terracotta)', bg: '#fce8de', label: formatDaysAgo(daysAgo) + ' ⭐' };
+}
+
+// ===== FAVOURITES =====
+// A recipe is a favourite if cooked MORE than 2 times in any rolling 30-day window
+function getFavouriteIds() {
+  const today = new Date();
+  today.setHours(0,0,0,0);
+  const cutoff = new Date(today);
+  cutoff.setDate(today.getDate() - 91);
+
+  // Count cooks per recipe in each rolling 30-day window
+  // Simpler: count total cooks in last 30 days — if > 2, it's a favourite
+  const counts30 = {}; // recipeId -> count in last 30 days
+  const cutoff30 = new Date(today);
+  cutoff30.setDate(today.getDate() - 30);
+
+  Object.entries(weekPlan).forEach(([wkKey, wkData]) => {
+    const [year, week] = wkKey.split('-W').map(Number);
+    if (isNaN(year) || isNaN(week)) return;
+    const jan4 = new Date(year, 0, 4);
+    const weekStart = new Date(jan4);
+    weekStart.setDate(jan4.getDate() - (jan4.getDay() || 7) + 1 + (week - 1) * 7);
+
+    Object.entries(wkData).forEach(([dayIdx, dayPlan]) => {
+      if (!dayPlan || typeof dayPlan !== 'object') return;
+      const dayDate = new Date(weekStart);
+      dayDate.setDate(weekStart.getDate() + parseInt(dayIdx));
+      dayDate.setHours(0,0,0,0);
+      if (dayDate > today || dayDate < cutoff30) return;
+
+      Object.entries(dayPlan).forEach(([mealType, recipeId]) => {
+        if (mealType === '_optional' || !recipeId || typeof recipeId !== 'number') return;
+        counts30[recipeId] = (counts30[recipeId] || 0) + 1;
+      });
+    });
+  });
+
+  return new Set(Object.entries(counts30).filter(([, c]) => c > 2).map(([id]) => Number(id)));
+}
+
+function renderPlanRecipeGrid() {
+  selectedPlanRecipeId = null;
+  const lcMap = getLastCookedMap();
+  const favIds = getFavouriteIds();
+  const sorted = [...recipes].sort((a, b) => {
+    const aFav = favIds.has(a.id) ? 0 : 1;
+    const bFav = favIds.has(b.id) ? 0 : 1;
+    if (aFav !== bFav) return aFav - bFav;
+    const da = lcMap[a.id]?.daysAgo ?? 9999;
+    const db = lcMap[b.id]?.daysAgo ?? 9999;
+    return db - da;
+  });
+  document.getElementById('planRecipeGrid').innerHTML = sorted.map(r => {
+    const lc = lcMap[r.id];
+    const badge = getLastCookedBadge(lc?.daysAgo);
+    const isFav = favIds.has(r.id);
+    return `<div class="plan-recipe-item${isFav ? ' plan-fav' : ''}" id="pri_${r.id}" onclick="selectPlanRecipe(${r.id})">
+      <div class="emoji">${r.emoji || '🍽️'}${isFav ? '<span style="font-size:12px">⭐</span>' : ''}</div>
+      <div class="name">${r.name}</div>
+      <div class="kcal">${r.kcal} kcal/100g</div>
+      <div style="font-size:10px;margin-top:4px;padding:2px 6px;border-radius:10px;background:${badge.bg};color:${badge.color};font-weight:500">${badge.label}</div>
+    </div>`;
+  }).join('');
+}
+
+
+function selectPlanRecipe(id) {
+  document.querySelectorAll('.plan-recipe-item').forEach(el => el.classList.remove('selected'));
+  document.getElementById('pri_' + id)?.classList.add('selected');
+  selectedPlanRecipeId = id;
+}
+
+function confirmAddToPlan() {
+  if(!selectedPlanRecipeId) { toast('Vælg en opskrift først'); return; }
+  if(!currentPlanSlot) return;
+  const {day, mealType} = currentPlanSlot;
+  const wk = getWeekKey(currentWeekOffset);
+  if(!weekPlan[wk]) weekPlan[wk] = {};
+  if(!weekPlan[wk][day]) weekPlan[wk][day] = {};
+  weekPlan[wk][day][mealType] = selectedPlanRecipeId;
+  save();
+  renderPlan();
+  closeModal('planModal');
+  toast('Tilføjet til madplan ✓');
+}
+
+function addDetailToPlan() {
+  closeModal('recipeDetailModal');
+  // Pre-select the recipe, open plan modal — user picks day via slot click normally
+  // Instead, open plan modal defaulting to Monday dinner
+  currentPlanSlot = {day: 0, mealType: 'dinner'};
+  selectedPlanRecipeId = currentDetailRecipeId;
+  const icons = {breakfast:'🌅',lunch:'☀️',dinner:'🍽',snack:'🍎'};
+  document.getElementById('planModalContext').textContent = `🍽 Aftensmad — Mandag (skift ved at klikke direkte i ugen)`;
+  renderPlanRecipeGrid();
+  setTimeout(() => {
+    document.querySelectorAll('.plan-recipe-item').forEach(el => el.classList.remove('selected'));
+    document.getElementById('pri_' + currentDetailRecipeId)?.classList.add('selected');
+  }, 50);
+  openModal('planModal');
+}
+
+// ===== RECIPES =====
+let currentSort = 'oldest';
+
+function setSortMode(mode) {
+  currentSort = mode;
+  document.querySelectorAll('.sort-btn').forEach(b => b.classList.toggle('active', b.dataset.sort === mode));
+  renderRecipes(document.getElementById('recipeSearch')?.value || '');
+}
+
+function applySortToRecipes(list, lcMap) {
+  return [...list].sort((a, b) => {
+    const da = lcMap[a.id]?.daysAgo;
+    const db = lcMap[b.id]?.daysAgo;
+    if (currentSort === 'oldest') return (db ?? 9999) - (da ?? 9999);
+    if (currentSort === 'newest') {
+      if (da === undefined && db === undefined) return 0;
+      if (da === undefined) return 1;
+      if (db === undefined) return -1;
+      return da - db;
+    }
+    if (currentSort === 'never') {
+      const aNever = da === undefined, bNever = db === undefined;
+      if (aNever && !bNever) return -1;
+      if (!aNever && bNever) return 1;
+      if (aNever && bNever) return a.name.localeCompare(b.name, 'da');
+      return (db ?? 0) - (da ?? 0);
+    }
+    if (currentSort === 'alpha') return a.name.localeCompare(b.name, 'da');
+    return 0;
+  });
+}
+
+function buildRecipeCard(r, lcMap, favIds) {
+  const lc = lcMap[r.id];
+  const badge = getLastCookedBadge(lc?.daysAgo);
+  const isFav = favIds.has(r.id);
+
+  let historyHtml = '';
+  if (lc && lc.allDates && lc.allDates.length > 1) {
+    historyHtml = `<div style="margin-top:4px;font-size:10px;color:#AAA;line-height:1.6">
+      Også lavet: ${lc.allDates.slice(1, 3).map(d => d.dateStr).join(', ')}
+    </div>`;
+  }
+
+  const lastCookedHtml = `<div style="margin-bottom:10px">
+    <span style="display:inline-flex;align-items:center;gap:4px;font-size:11px;padding:3px 9px;border-radius:12px;background:${badge.bg};color:${badge.color};font-weight:500;border:1px solid rgba(0,0,0,0.06)">
+      🕐 ${badge.label}${lc ? ` · ${lc.dateStr}` : ''}
+    </span>
+    ${historyHtml}
+  </div>`;
+
+  return `
+  <div class="recipe-card${isFav ? ' fav-card' : ''}" onclick="showRecipeDetail(${r.id})">
+    <div class="recipe-thumb">
+      <span>${r.emoji || '🍽️'}</span>
+      <div class="recipe-kcal-badge">${r.kcal} kcal/100g</div>
+      ${isFav ? `<div class="fav-badge">⭐ Favorit</div>` : ''}
+    </div>
+    <div class="recipe-body">
+      <div class="recipe-title">${r.name}</div>
+      <div class="recipe-meta">
+        <span>⏱ ${r.time || '?'}</span>
+        <span>👤 ${r.portions || 4} port.</span>
+        <span>💪 ${r.protein}g protein</span>
+      </div>
+      ${lastCookedHtml}
+      <div class="recipe-tags">${(r.tags||[]).map(t => `<span class="tag">${t}</span>`).join('')}</div>
+      <div class="recipe-actions">
+        <button class="btn btn-primary btn-sm" onclick="quickAddToPlan(${r.id});event.stopPropagation()">+ Madplan</button>
+        <button class="btn btn-ghost btn-sm" onclick="deleteRecipe(${r.id});event.stopPropagation()">🗑</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function renderRecipes(filter = '') {
+  const lcMap = getLastCookedMap();
+  const favIds = getFavouriteIds();
+
+  let filtered = filter
+    ? recipes.filter(r => r.name.toLowerCase().includes(filter.toLowerCase()) || (r.tags||[]).some(t => t.includes(filter.toLowerCase())))
+    : [...recipes];
+
+  const grid = document.getElementById('recipeGrid');
+
+  if (!filter && favIds.size > 0) {
+    // Show favourites section first, then rest sorted
+    const favs = filtered.filter(r => favIds.has(r.id));
+    const rest = applySortToRecipes(filtered.filter(r => !favIds.has(r.id)), lcMap);
+
+    grid.innerHTML =
+      `<div class="fav-section-header">
+        <span class="fav-section-icon">⭐</span>
+        <div>
+          <div style="font-family:'Playfair Display',serif;font-size:18px">Jeres Favoritter</div>
+          <div style="font-size:12px;color:var(--sage);margin-top:2px">Lavet mere end 2 gange på en måned</div>
+        </div>
+      </div>
+      <div class="fav-section-grid">
+        ${favs.map(r => buildRecipeCard(r, lcMap, favIds)).join('')}
+      </div>
+      <div class="fav-divider"><span>Alle opskrifter</span></div>
+      ${rest.map(r => buildRecipeCard(r, lcMap, favIds)).join('')}
+      <div class="recipe-add-card" onclick="openModal('addRecipeModal')">
+        <div class="add-icon">+</div>
+        <span>Ny opskrift</span>
+      </div>`;
+  } else {
+    const sorted = applySortToRecipes(filtered, lcMap);
+    grid.innerHTML = sorted.map(r => buildRecipeCard(r, lcMap, favIds)).join('') +
+      `<div class="recipe-add-card" onclick="openModal('addRecipeModal')">
+        <div class="add-icon">+</div>
+        <span>Ny opskrift</span>
+      </div>`;
+  }
+}
+
+function filterRecipes() {
+  renderRecipes(document.getElementById('recipeSearch').value);
+}
+
+function saveRecipe() {
+  const name = document.getElementById('r_name').value.trim();
+  if(!name) { toast('Udfyld opskriftens navn'); return; }
+  const r = {
+    id: Date.now(),
+    name,
+    emoji: document.getElementById('r_emoji').value || '🍽️',
+    category: document.getElementById('r_cat').value,
+    time: document.getElementById('r_time').value || '?',
+    portions: parseInt(document.getElementById('r_portions').value) || 4,
+    kcal: parseInt(document.getElementById('r_kcal').value) || 200,
+    protein: parseInt(document.getElementById('r_protein').value) || 10,
+    tags: document.getElementById('r_tags').value.split(',').map(t=>t.trim()).filter(Boolean),
+    ingredients: document.getElementById('r_ingredients').value.split('\n').filter(Boolean),
+    steps: document.getElementById('r_steps').value.split('\n').filter(Boolean)
+  };
+  recipes.push(r);
+  save();
+  renderRecipes();
+  closeModal('addRecipeModal');
+  toast('Opskrift gemt ✓');
+  ['r_name','r_emoji','r_time','r_portions','r_kcal','r_protein','r_tags','r_ingredients','r_steps'].forEach(id => document.getElementById(id).value = '');
+}
+
+function deleteRecipe(id) {
+  if(!confirm('Slet denne opskrift?')) return;
+  recipes = recipes.filter(r => r.id !== id);
+  save();
+  renderRecipes();
+  toast('Opskrift slettet');
+}
+
+function quickAddToPlan(id) {
+  currentPlanSlot = {day: 0, mealType: 'dinner'};
+  selectedPlanRecipeId = id;
+  document.getElementById('planModalContext').textContent = `🍽 Aftensmad — Mandag`;
+  renderPlanRecipeGrid();
+  setTimeout(() => {
+    document.querySelectorAll('.plan-recipe-item').forEach(el => el.classList.remove('selected'));
+    document.getElementById('pri_' + id)?.classList.add('selected');
+  }, 50);
+  openModal('planModal');
+}
+
+let currentDetailPortions = null; // null = use recipe default
+
+function scaleNumber(num, factor) {
+  const result = num * factor;
+  // Return nice fraction or decimal
+  if (result === Math.round(result)) return String(Math.round(result));
+  const nice = Math.round(result * 4) / 4; // nearest 0.25
+  if (nice === Math.round(nice)) return String(nice);
+  return nice.toFixed(1).replace('.0','');
+}
+
+function scaleIngredient(ing, factor) {
+  if (factor === 1) return ing;
+  // Match leading number (int, decimal, fraction like 1/2) optionally followed by unit
+  return ing.replace(/^(\d+([.,]\d+)?|\d+\/\d+)(\s*)/, (match, num, _, sp) => {
+    let val;
+    if (num.includes('/')) {
+      const [a,b] = num.split('/');
+      val = parseInt(a) / parseInt(b);
+    } else {
+      val = parseFloat(num.replace(',','.'));
+    }
+    return scaleNumber(val, factor) + sp;
+  });
+}
+
+function renderDetailIngredients(r, portions) {
+  const base = r.portions || 4;
+  const factor = portions / base;
+  return (r.ingredients||[]).map(ing => {
+    const scaled = scaleIngredient(ing, factor);
+    const match = scaled.match(/^([\d,./]+\s*\w*)\s+(.+)$/);
+    return match
+      ? `<li>${match[2]}<span>${match[1]}</span></li>`
+      : `<li>${scaled}<span></span></li>`;
+  }).join('');
+}
+
+function changePortions(delta) {
+  const r = recipes.find(r => r.id === currentDetailRecipeId);
+  if (!r) return;
+  if (currentDetailPortions === null) currentDetailPortions = r.portions || 4;
+  currentDetailPortions = Math.max(1, currentDetailPortions + delta);
+  document.getElementById('portionsCount').textContent = currentDetailPortions;
+  document.getElementById('portionsIngredientsList').innerHTML = renderDetailIngredients(r, currentDetailPortions);
+  const base = r.portions || 4;
+  const factor = currentDetailPortions / base;
+  const factorStr = (currentDetailPortions / (r.portions || 4)).toFixed(2).replace(/\.?0+$/, '');
+  document.getElementById('portionsScaleHint').textContent = currentDetailPortions !== (r.portions || 4) ? `(×${factorStr})` : '';
+}
+
+function showRecipeDetail(id) {
+  const r = recipes.find(r => r.id === id);
+  if(!r) return;
+  currentDetailRecipeId = id;
+  currentDetailPortions = r.portions || 4;
+
+  const carbs = Math.round(r.kcal / 4 * 0.5);
+  const fat = Math.round(r.kcal / 9 * 0.25);
+
+  const lcMap = getLastCookedMap();
+  const lc = lcMap[r.id];
+  const badge = getLastCookedBadge(lc?.daysAgo);
+  const favIds = getFavouriteIds();
+  const isFav = favIds.has(r.id);
+
+  document.getElementById('det_title').textContent = `${r.emoji || ''} ${r.name}${isFav ? ' ⭐' : ''}`;
+
+  let historyRows = '';
+  if (lc && lc.allDates && lc.allDates.length > 0) {
+    historyRows = lc.allDates.slice(0, 8).map((d, i) =>
+      `<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid rgba(0,0,0,0.05);font-size:12px">
+        <span>${i === 0 ? '🕐 Senest' : '·'} ${d.dateStr}</span>
+        <span style="color:var(--sage)">${formatDaysAgo(d.daysAgo)} · ${MEAL_LABELS[d.mealType] || d.mealType}</span>
+      </div>`
+    ).join('');
+  }
+
+  const lcHtml = `<div style="margin-bottom:14px">
+    <div style="display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:20px;background:${badge.bg};color:${badge.color};font-size:12px;font-weight:500;border:1px solid rgba(0,0,0,0.06)">
+      🕐 ${badge.label}${lc ? ` · ${lc.dateStr}` : ''}
+    </div>
+    ${historyRows ? `<div style="margin-top:10px;background:var(--cream);border-radius:8px;padding:8px 12px">${historyRows}</div>` : ''}
+  </div>`;
+
+  document.getElementById('det_body').innerHTML = `
+    <div class="recipe-detail-grid">
+      <div>
+        <div style="font-size:80px;text-align:center;margin-bottom:16px">${r.emoji || '🍽️'}</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">
+          ${(r.tags||[]).map(t=>`<span class="tag">${t}</span>`).join('')}
+        </div>
+        <div style="font-size:13px;color:var(--sage);margin-bottom:16px">
+          ⏱ ${r.time} &nbsp;·&nbsp; 🍽️ ${r.category}
+        </div>
+        ${lcHtml}
+        <p style="font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:0.6px;color:var(--moss);margin-bottom:8px">Næringsindhold pr. 100g</p>
+        <table class="nutrition-table">
+          <tr><th>Næringsstof</th><th>Mængde</th></tr>
+          <tr><td>Kalorier</td><td>${r.kcal} kcal</td></tr>
+          <tr><td>Protein</td><td>${r.protein} g</td></tr>
+          <tr><td>Kulhydrat</td><td>${carbs} g</td></tr>
+          <tr><td>Fedt</td><td>${fat} g</td></tr>
+        </table>
+        <div style="margin-top:16px">
+          <button class="btn btn-secondary btn-sm" onclick="addIngredientsToShop(${r.id})">🛒 Tilføj til indkøbsliste</button>
+        </div>
+      </div>
+      <div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+          <p class="section-title" style="margin:0">Ingredienser</p>
+          <div class="portions-scaler">
+            <button class="portions-btn" onclick="changePortions(-1)">−</button>
+            <span style="min-width:60px;text-align:center;font-size:14px">
+              <span id="portionsCount">${r.portions || 4}</span> port.
+              <span id="portionsScaleHint" style="font-size:11px;color:var(--sage)"></span>
+            </span>
+            <button class="portions-btn" onclick="changePortions(1)">+</button>
+          </div>
+        </div>
+        <ul class="ingredients-list" id="portionsIngredientsList">
+          ${renderDetailIngredients(r, currentDetailPortions)}
+        </ul>
+        <p class="section-title" style="margin-top:24px;margin-bottom:4px">Fremgangsmåde</p>
+        <ol class="steps-list">
+          ${(r.steps||[]).map(s=>`<li>${s}</li>`).join('')}
+        </ol>
+      </div>
+    </div>`;
+
+  openModal('recipeDetailModal');
+}
+
+function addIngredientsToShop(id) {
+  const r = recipes.find(r => r.id === id);
+  if(!r) return;
+  r.ingredients.forEach(ing => {
+    if(!shoppingList.find(i => i.name.toLowerCase() === ing.toLowerCase())) {
+      shoppingList.push({ id:Date.now()+Math.random(), name:ing, amount:'', category: guessCategory(ing), checked:false });
+    }
+  });
+  save();
+  toast(`Ingredienser fra "${r.name}" tilføjet ✓`);
+}
+
+function guessCategory(name) {
+  const n = name.toLowerCase();
+  if(/kylling|oksekød|hakket|laks|tun|rejer|fisk|svinekød|kød|bacon/.test(n)) return '🥩 Kød & Fisk';
+  if(/tomat|gulerod|løg|salat|agurk|peber|kartoffel|broccoli|spinat|squash|grøntsag|svamp/.test(n)) return '🥦 Grøntsager';
+  if(/mælk|fløde|smør|ost|yoghurt|æg|feta|parmesan|creme/.test(n)) return '🥛 Mejeri';
+  if(/mel|pasta|ris|havre|brød|rugbrød|spaghetti|noodle/.test(n)) return '🍞 Brød & Korn';
+  if(/dåse|olie|eddike|sennep|sauce|krydder|salt|peber|sukker|hvedemel/.test(n)) return '🥫 Tørvarer';
+  return '🧴 Andet';
+}
+
+// ===== SHOPPING =====
+function renderShopping() {
+  // Show/update store info bar
+  const infoBar = document.getElementById('shopStoreBar');
+  if (infoBar) {
+    if (householdStores.length || householdShopDay) {
+      infoBar.style.display = 'flex';
+      const storeChips = householdStores.map(s => `<span style="background:rgba(196,98,45,0.1);color:var(--terracotta);border:1px solid rgba(196,98,45,0.3);border-radius:20px;padding:2px 10px;font-size:12px;font-weight:500">🏪 ${s}</span>`).join('');
+      infoBar.innerHTML = `<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;flex:1">
+        ${storeChips || '<span style="font-size:13px;color:var(--sage)">Ingen butikker valgt</span>'}
+        ${householdShopDay ? `<span style="font-size:13px;color:var(--moss)">· 📅 ${householdShopDay}</span>` : ''}
+      </div>
+      <button class="btn btn-ghost btn-sm" onclick="openModal('householdModal')" style="font-size:11px;padding:3px 10px;flex-shrink:0">Rediger</button>`;
+    } else {
+      infoBar.innerHTML = `<span style="font-size:13px;color:var(--sage)">Ingen butikker valgt endnu</span>
+        <button class="btn btn-ghost btn-sm" onclick="openModal('householdModal')" style="font-size:11px;padding:3px 10px">Tilføj butikker →</button>`;
+      infoBar.style.display = 'flex';
+    }
+  }
+  const cats = {};
+  shoppingList.forEach(item => {
+    if(!cats[item.category]) cats[item.category] = [];
+    cats[item.category].push(item);
+  });
+
+  const total = shoppingList.length;
+  const checked = shoppingList.filter(i => i.checked).length;
+
+  const prog = document.getElementById('shopProgress');
+  if(total > 0) {
+    prog.style.display = 'block';
+    document.getElementById('shopProgressText').textContent = `${checked} af ${total} varer`;
+    document.getElementById('shopProgressPct').textContent = `${Math.round(checked/total*100)}%`;
+    document.getElementById('shopProgressBar').style.width = `${Math.round(checked/total*100)}%`;
+  } else {
+    prog.style.display = 'none';
+  }
+
+  const container = document.getElementById('shopCategories');
+
+  if(total === 0) {
+    container.innerHTML = `<div class="empty-state" style="grid-column:1/-1">
+      <div class="empty-icon">🛒</div>
+      <h3>Ingen varer endnu</h3>
+      <p>Tilføj varer manuelt, eller generer listen fra din madplan</p>
+    </div>`;
+    return;
+  }
+
+  // Sort categories by store order
+  const sortedCatEntries = Object.entries(cats).sort(([a], [b]) => {
+    const ai = storeCatOrder.indexOf(a);
+    const bi = storeCatOrder.indexOf(b);
+    return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi);
+  });
+
+  container.innerHTML = sortedCatEntries.map(([cat, items]) => `
+    <div class="shop-category">
+      <div class="shop-cat-header" style="background:var(--light-sage)">
+        <span class="cat-icon">${cat.split(' ')[0]}</span>
+        ${cat.split(' ').slice(1).join(' ')} <span style="margin-left:auto;font-weight:400;color:var(--sage);font-size:11px">${items.filter(i=>!i.checked).length} tilbage</span>
+      </div>
+      <div class="shop-items">
+        ${items.map(item => `
+          <div class="shop-item ${item.checked ? 'checked' : ''}" id="si_${item.id}">
+            <input type="checkbox" ${item.checked?'checked':''} onchange="toggleShopItem('${item.id}')">
+            <label onclick="toggleShopItem('${item.id}')">${item.name}${item.leftover ? ' <span class="leftover-tag">rester</span>' : ''}</label>
+            ${item.amount ? `<span class="amount">${item.amount}</span>` : ''}
+            <button class="shop-have-btn" title="Jeg har det allerede" onclick="markHaveIt('${item.id}')">Har det</button>
+            <button class="shop-item-del" onclick="deleteShopItem('${item.id}')">×</button>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `).join('');
+}
+
+function toggleShopItem(id) {
+  const item = shoppingList.find(i => i.id == id);
+  if(item) { item.checked = !item.checked; save(); renderShopping(); }
+}
+
+function deleteShopItem(id) {
+  shoppingList = shoppingList.filter(i => i.id != id);
+  save();
+  renderShopping();
+}
+
+function markHaveIt(id) {
+  shoppingList = shoppingList.filter(i => i.id != id);
+  save();
+  renderShopping();
+  toast('Fjernet — du har det allerede ✓');
+}
+
+function clearChecked() {
+  shoppingList = shoppingList.filter(i => !i.checked);
+  save();
+  renderShopping();
+  toast('Afkrydsede varer fjernet');
+}
+
+function addShopItem() {
+  const name = document.getElementById('si_name').value.trim();
+  if(!name) return;
+  shoppingList.push({
+    id: Date.now(),
+    name,
+    amount: document.getElementById('si_amount').value.trim(),
+    category: document.getElementById('si_cat').value,
+    checked: false
+  });
+  save();
+  renderShopping();
+  closeModal('addShopModal');
+  document.getElementById('si_name').value = '';
+  document.getElementById('si_amount').value = '';
+  toast('Vare tilføjet ✓');
+}
+
+// ===== DAY PICKER + SHOPPING GENERATION =====
+let selectedShopDays = new Set([0,1,2,3,4,5,6]); // defaults to all days
+
+function openDayPicker() {
+  showSection('shopping');
+  renderDayPicker();
+  document.getElementById('dayPickerPanel').style.display = 'block';
+  document.getElementById('dayPickerPanel').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function closeDayPicker() {
+  document.getElementById('dayPickerPanel').style.display = 'none';
+}
+
+function renderDayPicker() {
+  const wk = getWeekKey(currentWeekOffset);
+  const plan = weekPlan[wk] || {};
+  const grid = document.getElementById('dayPickerGrid');
+
+  grid.innerHTML = DAYS.map((dayName, i) => {
+    const dayPlan = plan[i] || {};
+    const isLeftover = !!dayPlan._leftover;
+    const dinnerRecipeId = dayPlan['dinner'];
+    const r = dinnerRecipeId ? recipes.find(r => r.id === dinnerRecipeId) : null;
+    const hasFood = !!r;
+    const isSelected = selectedShopDays.has(i);
+
+    const shortName = dayName.substring(0, 3);
+
+    return `<div class="day-pick-tile${isSelected && hasFood ? ' selected' : ''}${!hasFood ? ' empty' : ''}${isLeftover ? ' leftover-day-tile' : ''}"
+      onclick="${hasFood ? `toggleShopDay(${i})` : ''}">
+      <div class="day-pick-check">${isSelected && hasFood ? '✓' : ''}</div>
+      <div class="day-pick-name">${shortName}</div>
+      ${hasFood
+        ? `<div class="day-pick-emoji">${r.emoji || '🍽️'}</div>
+           <div class="day-pick-recipe">${r.name}</div>
+           ${isLeftover ? `<div class="day-pick-leftover-label">🥡 rester</div>` : ''}`
+        : `<div style="font-size:13px;color:var(--border);margin-top:8px">—</div>`
+      }
+    </div>`;
+  }).join('');
+}
+
+function toggleShopDay(i) {
+  if (selectedShopDays.has(i)) selectedShopDays.delete(i);
+  else selectedShopDays.add(i);
+  renderDayPicker();
+}
+
+function selectAllDays() {
+  selectedShopDays = new Set([0,1,2,3,4,5,6]);
+  renderDayPicker();
+}
+
+function deselectAllDays() {
+  selectedShopDays = new Set();
+  renderDayPicker();
+}
+
+function confirmGenerateFromDays() {
+  generateShoppingList([...selectedShopDays]);
+  closeDayPicker();
+}
+
+function generateShoppingList(allowedDays = null) {
+  const wk = getWeekKey(currentWeekOffset);
+  const plan = weekPlan[wk] || {};
+
+  // Build list of (dayIdx, mealType, recipeId) in day order — filter by allowedDays
+  const meals = [];
+  [0,1,2,3,4,5,6].forEach(dayIdx => {
+    if (allowedDays !== null && !allowedDays.includes(dayIdx)) return;
+    const day = plan[dayIdx];
+    if (!day) return;
+    Object.entries(day).forEach(([mealType, val]) => {
+      if (mealType === '_optional' || mealType === '_leftover' || typeof val !== 'number') return;
+      meals.push({ dayIdx, mealType, recipeId: val });
+    });
+  });
+
+  // Detect consecutive same-recipe rester (auto-detection)
+  const leftoverMeals = new Set();
+  meals.forEach((m, i) => {
+    if (i === 0) return;
+    const prev = meals[i - 1];
+    if (prev.recipeId === m.recipeId && m.dayIdx === prev.dayIdx + 1 && m.mealType === prev.mealType) {
+      leftoverMeals.add(i);
+    }
+  });
+
+  let added = 0;
+  let leftoversSkipped = 0;
+
+  meals.forEach((m, i) => {
+    const r = recipes.find(r => r.id === m.recipeId);
+    if (!r) return;
+    const dayPlan = plan[m.dayIdx] || {};
+    if (leftoverMeals.has(i) || (m.mealType === 'dinner' && dayPlan._leftover)) {
+      leftoversSkipped++;
+      return;
+    }
+    (r.ingredients || []).forEach(ing => {
+      if (!shoppingList.find(item => item.name.toLowerCase() === ing.toLowerCase())) {
+        shoppingList.push({ id: Date.now() + Math.random(), name: ing, amount: '', category: guessCategory(ing), checked: false });
+        added++;
+      }
+    });
+  });
+
+  save();
+  let msg = added > 0 ? `${added} varer tilføjet ✓` : 'Ingen nye varer at tilføje';
+  if (leftoversSkipped > 0) msg += ` · ${leftoversSkipped} retter sprunget over (rester)`;
+  toast(msg);
+  renderShopping();
+}
+
+
+
+// ===== PHOTO IMPORT =====
+function handlePhotoUpload(event) {
+  const file = event.target.files[0];
+  if(!file) return;
+
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const imageData = e.target.result;
+    document.getElementById('uploadedPhoto').src = imageData;
+    document.getElementById('photoPreview').classList.add('visible');
+
+    const processing = document.getElementById('processingState');
+    processing.classList.add('visible');
+    document.getElementById('extractedRecipe').innerHTML = '';
+    document.getElementById('importActions').style.display = 'none';
+
+    processRecipeImage(imageData);
+  };
+  reader.readAsDataURL(file);
+}
+
+async function processRecipeImage(imageDataUrl) {
+  const base64 = imageDataUrl.split(',')[1];
+  const mediaType = imageDataUrl.split(';')[0].split(':')[1];
+
+  const statusTexts = [
+    'Analyserer billede...',
+    'Fjerner reklamer og irrelevant indhold...',
+    'Udtrækker ingredienser...',
+    'Strukturerer opskriften...'
+  ];
+
+  let statusIdx = 0;
+  const interval = setInterval(() => {
+    statusIdx = (statusIdx + 1) % statusTexts.length;
+    document.getElementById('processingText').textContent = statusTexts[statusIdx];
+  }, 1800);
+
+  try {
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        messages: [{
+          role: 'user',
+          content: [
+            {
+              type: 'image',
+              source: { type: 'base64', media_type: mediaType, data: base64 }
+            },
+            {
+              type: 'text',
+              text: `Du er en assistent der hjælper med at rense opskrifter. Analysér dette billede og:
+1. Ignorer ALT der ikke er selve opskriften (reklamer, annoncer, bannere, sociale medier knapper, kommentarer, relaterede opskrifter, nyhedsbreve, cookies, navigation, etc.)
+2. Udtrækker KUN: opskriftens navn, ingredienser (med mængder), og fremgangsmåde
+3. Estimer kcal pr. 100g og protein pr. 100g baseret på ingredienserne
+4. Returner svaret på DANSK i dette JSON-format:
+{
+  "name": "Opskriftens navn",
+  "emoji": "passende emoji",
+  "category": "Aftensmad/Frokost/Morgenmad/Dessert/Snack",
+  "time": "X min",
+  "portions": antal,
+  "kcal": kcal_per_100g,
+  "protein": protein_per_100g,
+  "tags": ["tag1","tag2"],
+  "ingredients": ["mængde ingrediens1", "mængde ingrediens2"],
+  "steps": ["Trin 1...", "Trin 2..."],
+  "display": "HTML der viser opskriften pænt"
+}
+Returnér KUN JSON, ingen tekst før eller efter.`
+            }
+          ]
+        }]
+      })
+    });
+
+    clearInterval(interval);
+
+    const data = await response.json();
+    const text = data.content?.[0]?.text || '';
+
+    let parsed;
+    try {
+      const clean = text.replace(/```json|```/g, '').trim();
+      parsed = JSON.parse(clean);
+      importedRecipeData = parsed;
+    } catch {
+      // fallback: show raw text as cleaned recipe
+      importedRecipeData = null;
+      document.getElementById('extractedRecipe').innerHTML = `<p style="color:var(--sage);font-size:13px">Kunne ikke parse automatisk. Her er det rensede indhold:</p><p style="margin-top:8px">${text.replace(/\n/g,'<br>')}</p>`;
+      document.getElementById('processingState').classList.remove('visible');
+      return;
+    }
+
+    // Display extracted recipe nicely
+    document.getElementById('extractedRecipe').innerHTML = `
+      <h4>${parsed.emoji || '🍽️'} ${parsed.name}</h4>
+      <p style="color:var(--sage);font-size:12px;margin-bottom:10px">${parsed.category} · ${parsed.time} · ${parsed.portions} port. · ${parsed.kcal} kcal/100g · ${parsed.protein}g protein</p>
+      <strong style="font-size:12px;text-transform:uppercase;letter-spacing:0.5px;color:var(--moss)">Ingredienser</strong>
+      <ul style="margin:6px 0 10px 16px;font-size:13px">
+        ${parsed.ingredients.map(i=>`<li>${i}</li>`).join('')}
+      </ul>
+      <strong style="font-size:12px;text-transform:uppercase;letter-spacing:0.5px;color:var(--moss)">Fremgangsmåde</strong>
+      <ol style="margin:6px 0 0 16px;font-size:13px;line-height:1.7">
+        ${parsed.steps.map(s=>`<li>${s}</li>`).join('')}
+      </ol>
+    `;
+
+    document.getElementById('importActions').style.display = 'flex';
+  } catch (err) {
+    clearInterval(interval);
+    document.getElementById('extractedRecipe').innerHTML = `<p style="color:var(--terracotta)">Fejl ved behandling: ${err.message}.<br>Prøv igen med et tydeligere billede.</p>`;
+  } finally {
+    document.getElementById('processingState').classList.remove('visible');
+  }
+}
+
+function saveImportedRecipe() {
+  if(!importedRecipeData) { toast('Ingen opskrift at gemme'); return; }
+  const r = {
+    id: Date.now(),
+    name: importedRecipeData.name || 'Importeret opskrift',
+    emoji: importedRecipeData.emoji || '🍽️',
+    category: importedRecipeData.category || 'Aftensmad',
+    time: importedRecipeData.time || '?',
+    portions: importedRecipeData.portions || 4,
+    kcal: importedRecipeData.kcal || 200,
+    protein: importedRecipeData.protein || 10,
+    tags: importedRecipeData.tags || ['importeret'],
+    ingredients: importedRecipeData.ingredients || [],
+    steps: importedRecipeData.steps || []
+  };
+  recipes.push(r);
+  save();
+  toast(`"${r.name}" gemt som opskrift ✓`);
+  resetImport();
+  showSection('recipes');
+}
+
+function resetImport() {
+  document.getElementById('photoPreview').classList.remove('visible');
+  document.getElementById('importActions').style.display = 'none';
+  document.getElementById('processingState').classList.remove('visible');
+  document.getElementById('photoInput').value = '';
+  importedRecipeData = null;
+}
+
+// Drag & drop
+const drop = document.getElementById('photoDrop');
+drop.addEventListener('dragover', e => { e.preventDefault(); drop.classList.add('dragover'); });
+drop.addEventListener('dragleave', () => drop.classList.remove('dragover'));
+drop.addEventListener('drop', e => {
+  e.preventDefault();
+  drop.classList.remove('dragover');
+  const file = e.dataTransfer.files[0];
+  if(file && file.type.startsWith('image/')) {
+    const dt = new DataTransfer();
+    dt.items.add(file);
+    document.getElementById('photoInput').files = dt.files;
+    handlePhotoUpload({ target: { files: [file] } });
+  }
+});
+
+// ===== INSPIRATION =====
+async function openInspirationModal() {
+  const lcMap = getLastCookedMap();
+  const content = document.getElementById('inspirationContent');
+
+  // Sort recipes by longest not cooked
+  const sorted = [...recipes].sort((a, b) => {
+    const da = lcMap[a.id]?.daysAgo ?? 9999;
+    const db = lcMap[b.id]?.daysAgo ?? 9999;
+    return db - da;
+  });
+
+  const neverCooked = sorted.filter(r => !lcMap[r.id]);
+  const longAgo = sorted.filter(r => lcMap[r.id] && lcMap[r.id].daysAgo > 14);
+  const suggestions = [...neverCooked, ...longAgo].slice(0, 6);
+
+  // Build static content
+  let html = '';
+
+  if (suggestions.length > 0) {
+    html += `<p style="color:var(--sage);font-size:13px;line-height:1.7;margin-bottom:20px">
+      Her er retter du ikke har lavet i lang tid — eller aldrig har prøvet. Perfekt til at bryde rutinen! 🍽
+    </p>`;
+
+    html += `<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:24px">
+      ${suggestions.map(r => {
+        const lc = lcMap[r.id];
+        const badge = getLastCookedBadge(lc?.daysAgo);
+        return `<div style="border:1.5px solid var(--border);border-radius:12px;padding:14px;background:var(--warm-white);display:flex;flex-direction:column;gap:6px">
+          <div style="font-size:28px">${r.emoji || '🍽️'}</div>
+          <div style="font-family:'Playfair Display',serif;font-size:15px;line-height:1.3">${r.name}</div>
+          <div style="font-size:11px;padding:2px 8px;border-radius:10px;background:${badge.bg};color:${badge.color};font-weight:500;width:fit-content">${badge.label}</div>
+          <div style="font-size:11px;color:var(--sage)">⏱ ${r.time} · ${r.kcal} kcal/100g</div>
+          <button class="btn btn-primary btn-sm" style="margin-top:4px" onclick="quickAddToPlan(${r.id});closeModal('inspirationModal')">+ Tilføj til madplan</button>
+        </div>`;
+      }).join('')}
+    </div>`;
+  } else {
+    html += `<p style="color:var(--sage);font-size:14px;margin-bottom:20px">Du er godt i gang — alle retter er blevet lavet for nylig!</p>`;
+  }
+
+  // AI suggestions section
+  html += `<div style="border-top:1px solid var(--border);padding-top:20px">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+      <span style="font-size:18px">🤖</span>
+      <div>
+        <div style="font-size:14px;font-weight:600;color:var(--ink)">AI-forslag til ugen</div>
+        <div style="font-size:12px;color:var(--sage)">Få personlige forslag baseret på dine opskrifter og madhistorik</div>
+      </div>
+      <button class="btn btn-secondary btn-sm" style="margin-left:auto" onclick="getAISuggestions()">Generer ✨</button>
+    </div>
+    <div id="aiSuggestionsArea" style="background:var(--cream);border-radius:10px;padding:14px;font-size:13px;color:var(--sage);min-height:60px;line-height:1.7">
+      Klik "Generer" for AI-forslag til ugens madplan…
+    </div>
+  </div>`;
+
+  content.innerHTML = html;
+  document.getElementById('inspirationModal').classList.add('open');
+}
+
+async function getAISuggestions() {
+  const area = document.getElementById('aiSuggestionsArea');
+  area.innerHTML = `<div style="display:flex;align-items:center;gap:10px;color:var(--moss)"><div class="spinner"></div> Tænker på gode forslag…</div>`;
+
+  const lcMap = getLastCookedMap();
+  const recipeContext = recipes.map(r => {
+    const lc = lcMap[r.id];
+    return `- ${r.emoji} ${r.name} (${r.category}, ${r.time}, sidst lavet: ${lc ? lc.dateStr + ' = ' + lc.daysAgo + ' dage siden' : 'aldrig'})`;
+  }).join('\n');
+
+  // What's already planned this week
+  const wk = getWeekKey(currentWeekOffset);
+  const plan = weekPlan[wk] || {};
+  const plannedThisWeek = [];
+  Object.entries(plan).forEach(([dayIdx, dayPlan]) => {
+    Object.entries(dayPlan).forEach(([mealType, recipeId]) => {
+      if (mealType === '_optional' || !recipeId) return;
+      const r = recipes.find(r => r.id === recipeId);
+      if (r) plannedThisWeek.push(`${DAYS[dayIdx]} ${MEAL_LABELS[mealType]}: ${r.name}`);
+    });
+  });
+
+  try {
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        messages: [{
+          role: 'user',
+          content: `Du er en madplanlægnings-assistent for en dansk husstand. 
+
+Mine opskrifter og hvornår de sidst blev lavet:
+${recipeContext}
+
+Allerede planlagt denne uge:
+${plannedThisWeek.length > 0 ? plannedThisWeek.join('\n') : 'Intet planlagt endnu'}
+
+Giv mig 3-4 konkrete forslag til hvad vi skal have denne uge, med fokus på:
+1. Retter vi ikke har lavet i lang tid (eller aldrig)
+2. Variation i kategorier og smage
+3. Undgå hvad der allerede er planlagt
+
+Vær kort og uformel. Brug emojis. Forklar kort HVORFOR du foreslår retten (f.eks. "sidst lavet for 6 uger siden" eller "I har aldrig prøvet den"). Slut med en enkelt sætning om balance i ugen.`
+        }]
+      })
+    });
+
+    const data = await response.json();
+    const text = data.content?.[0]?.text || 'Kunne ikke generere forslag.';
+    area.innerHTML = `<div style="color:var(--ink);white-space:pre-wrap;line-height:1.8">${text.replace(/\n/g, '<br>')}</div>`;
+  } catch(e) {
+    area.innerHTML = `<span style="color:var(--terracotta)">Fejl: ${e.message}</span>`;
+  }
+}
+
+// ===== STORE SETTINGS (multi-store) =====
+const ALL_STORES = ['Netto','Rema 1000','Lidl','Aldi','Bilka','Føtex','Meny','SuperBrugsen','Kvickly','Irma','365discount'];
+let householdStores = []; // array of store names
+let householdShopDay = '';
+
+function renderStoreCheckboxes() {
+  const el = document.getElementById('storeCheckboxes');
+  if (!el) return;
+  el.innerHTML = ALL_STORES.map(s => `
+    <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;padding:7px 10px;border-radius:8px;border:1.5px solid ${householdStores.includes(s) ? 'var(--terracotta)' : 'var(--border)'};background:${householdStores.includes(s) ? 'rgba(196,98,45,0.07)' : 'var(--cream)'}">
+      <input type="checkbox" ${householdStores.includes(s) ? 'checked' : ''} onchange="toggleStore('${s}')" style="accent-color:var(--terracotta);width:15px;height:15px">
+      ${s}
+    </label>`).join('');
+}
+
+function toggleStore(name) {
+  if (householdStores.includes(name)) {
+    householdStores = householdStores.filter(s => s !== name);
+  } else {
+    householdStores = [...householdStores, name];
+  }
+  renderStoreCheckboxes();
+  saveStoreSettings();
+}
+
+async function saveStoreSettings() {
+  householdShopDay = document.getElementById('hhShopDaySelect')?.value || '';
+  await sbUpsert({ code: currentHousehold.code, stores: householdStores, shop_day: householdShopDay });
+  renderShopping();
+  const label = householdStores.length ? householdStores.join(', ') : 'ingen butikker';
+  toast(`Butikker gemt: ${label}`);
+}
+
+// ===== PRICE ESTIMATE (multi-store) =====
+async function openPriceEstimate() {
+  const panel = document.getElementById('pricePanel');
+  panel.style.display = 'block';
+  panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+  const unchecked = shoppingList.filter(i => !i.checked);
+  if (unchecked.length === 0) {
+    document.getElementById('priceResults').innerHTML = '<p style="color:var(--sage);padding:16px">Ingen varer på indkøbslisten endnu.</p>';
+    return;
+  }
+
+  document.getElementById('priceProcessing').style.display = 'flex';
+  document.getElementById('priceResults').innerHTML = '';
+
+  const today = new Date().toLocaleDateString('da-DK', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
+  const itemList = unchecked.map(i => `- ${i.name}${i.amount ? ' (' + i.amount + ')' : ''}`).join('\n');
+  const storeList = householdStores.length ? householdStores : ['generisk dansk supermarked'];
+  const multiStore = householdStores.length > 1;
+
+  try {
+    document.getElementById('priceProcessingText').textContent = 'Estimerer priser og søger tilbud...';
+
+    const prompt = `Du er en dansk madbudget-ekspert (${today}).
+
+Indkøbsliste:
+${itemList}
+
+Butikker: ${storeList.join(', ')}
+
+${multiStore ? `For HVER butik: estimer prisen på ALLE varer. Find derefter den billigste fordeling — dvs. for hver vare, hvilken butik er billigst? Fordel hele listen så den samlede pris minimeres (nogle varer købes i én butik, andre i en anden).
+
+Brug web_search til at finde aktuelle tilbudsaviser for ${storeList.join(' og ')}.` : `Estimer prisen på hver vare. Søg efter aktuelle tilbud i ${storeList[0]}.`}
+
+Svar KUN med JSON (ingen markdown, ingen forklaring):
+{
+  "stores": {
+    ${storeList.map(s => `"${s}": {"total": 0, "items": [{"name":"varenavn","price":0,"onOffer":false,"offerDesc":""}]}`).join(',\n    ')}
+  },
+  ${multiStore ? `"optimal": {
+    "totalSaving": 0,
+    "assignments": [{"name":"varenavn","store":"butiksnavn","price":0,"reason":"billigst fordi...","onOffer":false}],
+    "byStore": {"Butik1": {"total":0,"items":["vare1"]}, "Butik2": {"total":0,"items":["vare2"]}}
+  },` : ''}
+  "cheaperAlternatives": [{"item":"dyr vare","alternative":"billigt alternativ","saving":"spar X kr"}],
+  "savingTips": ["tip"]
+}`;
+
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 2000,
+        tools: [{ type: 'web_search_20250305', name: 'web_search' }],
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+    const data = await resp.json();
+    const text = data.content?.find(b => b.type === 'text')?.text || '{}';
+    const json = JSON.parse(text.replace(/```json|```/g, '').trim());
+
+    document.getElementById('priceProcessing').style.display = 'none';
+    renderPriceResults(json, multiStore, storeList);
+
+  } catch(e) {
+    document.getElementById('priceProcessing').style.display = 'none';
+    document.getElementById('priceResults').innerHTML = `<div style="color:var(--terracotta);padding:16px">Fejl: ${e.message}</div>`;
+  }
+}
+
+function renderPriceResults(data, multiStore, storeList) {
+  const stores = data.stores || {};
+  const optimal = data.optimal;
+  const alts = data.cheaperAlternatives || [];
+  const tips = data.savingTips || [];
+
+  let html = '';
+
+  // ---- Optimal split (multi-store only) ----
+  if (multiStore && optimal) {
+    const byStore = optimal.byStore || {};
+    const storeCards = Object.entries(byStore).filter(([,v]) => v.items?.length).map(([store, v]) => {
+      const items = v.items || [];
+      const storeData = stores[store]?.items || [];
+      return `<div style="flex:1;min-width:200px;background:var(--warm-white);border:2px solid var(--terracotta);border-radius:14px;padding:18px">
+        <div style="font-size:13px;font-weight:600;color:var(--terracotta);text-transform:uppercase;letter-spacing:0.4px;margin-bottom:4px">🏪 ${store}</div>
+        <div style="font-family:'Playfair Display',serif;font-size:24px;margin-bottom:12px">${v.total?.toFixed ? v.total.toFixed(0) : v.total} <span style="font-size:14px;color:var(--sage)">kr</span></div>
+        ${items.map(name => {
+          const a = optimal.assignments?.find(x => x.name === name);
+          const onOffer = a?.onOffer;
+          return `<div style="padding:6px 0;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;gap:8px">
+            <span style="font-size:13px">${name}</span>
+            <div style="display:flex;align-items:center;gap:6px">
+              ${onOffer ? '<span style="font-size:10px;background:#fef9ec;color:#7a5c00;border:1px solid #e8c88a;border-radius:20px;padding:1px 7px">TILBUD</span>' : ''}
+              <span style="font-weight:600;font-size:13px;white-space:nowrap">${a?.price ? '~' + Math.round(a.price) + ' kr' : ''}</span>
+            </div>
+          </div>`;
+        }).join('')}
+      </div>`;
+    }).join('');
+
+    html += `<div style="background:linear-gradient(135deg,rgba(196,98,45,0.06),rgba(74,82,64,0.06));border:1.5px solid var(--terracotta);border-radius:16px;padding:20px;margin-bottom:20px">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;flex-wrap:wrap;gap:8px">
+        <div>
+          <div style="font-size:12px;text-transform:uppercase;letter-spacing:0.5px;color:var(--moss);margin-bottom:4px">✨ Optimal fordeling</div>
+          <div style="font-size:13px;color:var(--sage)">Billigste kombination af dine butikker</div>
+        </div>
+        ${optimal.totalSaving ? `<div style="background:var(--terracotta);color:white;border-radius:10px;padding:8px 14px;font-size:13px;font-weight:600">Spar ~${Math.round(optimal.totalSaving)} kr</div>` : ''}
+      </div>
+      <div style="display:flex;gap:14px;flex-wrap:wrap">${storeCards}</div>
+    </div>`;
+  }
+
+  // ---- Per-store price overview ----
+  const storeOverviews = storeList.map(storeName => {
+    const sd = stores[storeName];
+    if (!sd) return '';
+    const items = sd.items || [];
+    const onOffer = items.filter(i => i.onOffer);
+    return `<div style="background:var(--warm-white);border:1.5px solid var(--border);border-radius:14px;padding:18px">
+      <div style="display:flex;justify-content:space-between;margin-bottom:12px">
+        <div>
+          <div style="font-size:13px;font-weight:600;color:var(--moss)">${storeName}</div>
+          <div style="font-family:'Playfair Display',serif;font-size:22px">${sd.total?.toFixed ? sd.total.toFixed(0) : sd.total} <span style="font-size:13px;color:var(--sage)">kr</span></div>
+        </div>
+        ${onOffer.length ? `<span style="font-size:11px;background:#fef9ec;color:#7a5c00;border:1px solid #e8c88a;border-radius:20px;padding:3px 10px;height:fit-content">⚡ ${onOffer.length} på tilbud</span>` : ''}
+      </div>
+      ${items.map(i => `<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--border);gap:8px">
+        <span style="font-size:12px">${i.name}</span>
+        <div style="display:flex;align-items:center;gap:6px">
+          ${i.onOffer ? `<span style="font-size:10px;color:var(--terracotta)">${i.offerDesc || 'Tilbud'}</span>` : ''}
+          <span style="font-weight:500;font-size:12px;white-space:nowrap">~${Math.round(i.price)} kr</span>
+        </div>
+      </div>`).join('')}
+    </div>`;
+  }).join('');
+
+  if (storeList.length) {
+    html += `<div style="margin-bottom:20px">
+      <div style="font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:var(--moss);margin-bottom:10px">Priser pr. butik</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px">${storeOverviews}</div>
+    </div>`;
+  }
+
+  // ---- Alternatives + tips ----
+  if (alts.length) {
+    html += `<div style="margin-bottom:16px">
+      <div style="font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:var(--moss);margin-bottom:8px">💡 Billigere alternativer</div>
+      ${alts.map(a => `<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:var(--warm-white);border:1px solid var(--border);border-radius:10px;margin-bottom:6px;gap:12px">
+        <div><span style="font-size:13px">${a.item}</span> <span style="color:var(--sage)">→</span> <span style="font-size:13px;font-weight:500">${a.alternative}</span></div>
+        <span style="font-size:12px;color:var(--moss);white-space:nowrap">${a.saving}</span>
+      </div>`).join('')}
+    </div>`;
+  }
+  if (tips.length) {
+    html += `<div>${tips.map(t => `<div style="padding:8px 12px;background:var(--light-sage);border-radius:8px;font-size:13px;color:var(--moss);margin-bottom:6px">💡 ${t}</div>`).join('')}</div>`;
+  }
+
+  if (!householdStores.length) {
+    html = `<div style="text-align:center;padding:24px;background:var(--warm-white);border:1.5px dashed var(--border);border-radius:14px">
+      <div style="font-size:32px;margin-bottom:8px">🏪</div>
+      <div style="font-size:15px;font-weight:500;margin-bottom:8px">Vælg dine butikker for at sammenligne priser</div>
+      <button class="btn btn-primary" onclick="openModal('householdModal')">Tilføj butikker →</button>
+    </div>` + html;
+  }
+
+  document.getElementById('priceResults').innerHTML = html;
+}
+
+// ===== MADLOG =====
+function renderMadlog() {
+  const container = document.getElementById('madlogContent');
+  const today = new Date();
+  today.setHours(0,0,0,0);
+
+  // Collect last 12 weeks of plan data
+  const weeks = [];
+  for (let offset = 0; offset >= -11; offset--) {
+    const wk = getWeekKey(offset);
+    const plan = weekPlan[wk];
+    if (!plan || Object.keys(plan).length === 0) continue;
+    const dates = getWeekDates(offset);
+    weeks.push({ wk, plan, dates, offset });
+  }
+
+  if (weeks.length === 0) {
+    container.innerHTML = `<div class="empty-state"><div class="empty-icon">📓</div><h3>Ingen madhistorik endnu</h3><p>Planlæg din første uge for at se loggen her</p></div>`;
+    return;
+  }
+
+  container.innerHTML = weeks.map(({ wk, plan, dates, offset }) => {
+    const weekNum = getWeekNumber(dates[0]);
+    const yr = dates[0].getFullYear();
+    const isCurrentWeek = offset === 0;
+
+    const days = [0,1,2,3,4,5,6].map(i => {
+      const dayPlan = plan[i] || {};
+      const meals = [];
+      ['breakfast','lunch','dinner','snack'].forEach(type => {
+        const rid = dayPlan[type];
+        if (rid && typeof rid === 'number') {
+          const r = recipes.find(r => r.id === rid);
+          if (r) meals.push({ type, r, leftover: type === 'dinner' && dayPlan._leftover });
+        }
+      });
+      const isPast = dates[i] < today;
+      return `<div class="madlog-day${meals.length === 0 ? ' empty' : ''}" style="${!isPast && !isCurrentWeek ? 'opacity:0.6' : ''}">
+        <div class="madlog-day-name">${DAYS[i].substring(0,3)}<br><span style="font-weight:400;color:var(--sage)">${dates[i].getDate()}/${dates[i].getMonth()+1}</span></div>
+        ${meals.map(m => `<div class="madlog-meal">
+          <span class="madlog-meal-emoji">${m.r.emoji || '🍽️'}</span>
+          <span style="${m.leftover ? 'color:var(--sage)' : ''}">${m.r.name}${m.leftover ? ' 🥡' : ''}</span>
+        </div>`).join('')}
+        ${meals.length === 0 ? '<span style="color:var(--border);font-size:11px">—</span>' : ''}
+      </div>`;
+    }).join('');
+
+    return `<div class="madlog-week">
+      <div class="madlog-week-title">Uge ${weekNum}, ${yr}${isCurrentWeek ? ' <span style="font-size:12px;background:var(--terracotta);color:white;padding:2px 8px;border-radius:10px;font-family:\'DM Sans\',sans-serif">Denne uge</span>' : ''}</div>
+      <div class="madlog-grid">${days}</div>
+    </div>`;
+  }).join('');
+}
+
+// ===== FRIDGE SCANNER =====
+let fridgePhotoData = null;
+
+function handleFridgePhoto(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    fridgePhotoData = ev.target.result;
+    document.getElementById('fridgePhotoImg').src = fridgePhotoData;
+    document.getElementById('fridgePhotoPreview').style.display = 'block';
+    document.getElementById('fridgePhotoPlaceholder').style.display = 'none';
+  };
+  reader.readAsDataURL(file);
+}
+
+function clearFridgePhoto() {
+  fridgePhotoData = null;
+  document.getElementById('fridgePhotoImg').src = '';
+  document.getElementById('fridgePhotoPreview').style.display = 'none';
+  document.getElementById('fridgePhotoPlaceholder').style.display = 'flex';
+  document.getElementById('fridgePhotoInput').value = '';
+}
+
+async function getFridgeSuggestions() {
+  const text = document.getElementById('fridgeText').value.trim();
+  if (!text && !fridgePhotoData) { toast('Skriv hvad du har, eller tag et billede'); return; }
+
+  document.getElementById('fridgeProcessing').style.display = 'flex';
+  document.getElementById('fridgeResults').innerHTML = '';
+
+  try {
+    const recipeNames = recipes.map(r => `${r.emoji} ${r.name} (${(r.tags||[]).join(', ')})`).join('\n');
+
+    // Build message content
+    const userContent = [];
+
+    if (fridgePhotoData) {
+      const base64 = fridgePhotoData.split(',')[1];
+      const mtype = fridgePhotoData.split(';')[0].split(':')[1];
+      userContent.push({ type: 'image', source: { type: 'base64', media_type: mtype, data: base64 } });
+    }
+
+    let prompt = `Du er en madassistent. `;
+    if (fridgePhotoData) prompt += `Se billedet af køleskabet og identificer alle ingredienser. `;
+    if (text) prompt += `Ingredienser tilgængelige: ${text}. `;
+    prompt += `\n\nHusstanden har følgende opskrifter:\n${recipeNames}\n\n`;
+    prompt += `Foreslå 3-5 retter man kan lave med de tilgængelige ingredienser. Prioriter opskrifter fra listen, men foreslå også evt. simple retter der ikke er på listen. Svar KUN med JSON i dette format (ingen markdown, ingen tekst udenfor JSON):\n{"suggestions":[{"name":"Rettens navn","emoji":"🍽️","match":85,"description":"Kort beskrivelse af retten","missing":["ingredient man mangler"],"inLibrary":true}]}`;
+
+    userContent.push({ type: 'text', text: prompt });
+
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 1000, messages: [{ role: 'user', content: userContent }] })
+    });
+    const data = await resp.json();
+    const rawText = data.content?.find(b => b.type === 'text')?.text || '';
+    const clean = rawText.replace(/```json|```/g, '').trim();
+    const parsed = JSON.parse(clean);
+
+    renderFridgeSuggestions(parsed.suggestions || []);
+  } catch(e) {
+    document.getElementById('fridgeResults').innerHTML = `<div style="color:var(--terracotta);padding:16px">Fejl: ${e.message}</div>`;
+  } finally {
+    document.getElementById('fridgeProcessing').style.display = 'none';
+  }
+}
+
+function renderFridgeSuggestions(suggestions) {
+  const el = document.getElementById('fridgeResults');
+  if (suggestions.length === 0) { el.innerHTML = '<p style="color:var(--sage)">Ingen forslag fundet. Prøv at tilføje flere ingredienser.</p>'; return; }
+
+  el.innerHTML = `<div style="font-family:'Playfair Display',serif;font-size:20px;margin-bottom:16px">Forslag til hvad du kan lave 🍳</div>` +
+    suggestions.map(s => {
+      const inLib = recipes.find(r => r.name.toLowerCase() === s.name.toLowerCase());
+      return `<div class="fridge-suggestion-card">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px">
+          <span style="font-size:28px">${s.emoji || '🍽️'}</span>
+          <div>
+            <h3 style="margin:0">${s.name}</h3>
+            ${inLib ? `<span style="font-size:11px;background:var(--light-sage);color:var(--moss);padding:2px 8px;border-radius:10px;font-weight:600">✓ I din opskriftsbog</span>` : `<span style="font-size:11px;color:var(--sage)">Ikke i opskriftsbogen</span>`}
+          </div>
+          <span style="margin-left:auto;font-size:13px;font-weight:600;color:var(--sage)">${s.match}% match</span>
+        </div>
+        <div class="fridge-match-bar"><div class="fridge-match-fill" style="width:${s.match}%;background:${s.match>80?'var(--sage)':s.match>60?'var(--gold)':'var(--terracotta)'}"></div></div>
+        <p style="font-size:13px;color:var(--ink);margin-bottom:8px;line-height:1.6">${s.description}</p>
+        ${s.missing && s.missing.length > 0 ? `<div style="font-size:12px;color:var(--sage)">Mangler: ${s.missing.join(', ')}</div>` : `<div style="font-size:12px;color:var(--moss);font-weight:600">✓ Har alle ingredienser</div>`}
+        ${inLib ? `<button class="btn btn-primary btn-sm" style="margin-top:12px" onclick="showRecipeDetail(${inLib.id})">Se opskrift →</button>` : ''}
+      </div>`;
+    }).join('');
+}
+
+// ===== STORE SORT =====
+const DEFAULT_CAT_ORDER = ['🥩 Kød & Fisk','🥦 Grøntsager','🥛 Mejeri','🍞 Brød & Korn','🥫 Tørvarer','🧴 Andet'];
+let storeCatOrder = [...DEFAULT_CAT_ORDER];
+let storeSortDragIdx = null;
+
+function toggleStoreSortPanel() {
+  const panel = document.getElementById('storeSortPanel');
+  const isOpen = panel.style.display !== 'none';
+  panel.style.display = isOpen ? 'none' : 'block';
+  if (!isOpen) renderStoreSortList();
+}
+
+function renderStoreSortList() {
+  const list = document.getElementById('storeSortList');
+  list.innerHTML = storeCatOrder.map((cat, i) =>
+    `<div class="store-sort-row" draggable="true"
+      ondragstart="storeSortDragIdx=${i}"
+      ondragover="event.preventDefault()"
+      ondrop="storeSortDrop(${i})">
+      <span class="drag-handle">⠿</span>
+      <span style="font-size:18px">${cat.split(' ')[0]}</span>
+      <span>${cat.split(' ').slice(1).join(' ')}</span>
+      <span style="margin-left:auto;font-size:11px;color:var(--sage)">${i+1}</span>
+    </div>`
+  ).join('');
+}
+
+function storeSortDrop(targetIdx) {
+  if (storeSortDragIdx === null || storeSortDragIdx === targetIdx) return;
+  const moved = storeCatOrder.splice(storeSortDragIdx, 1)[0];
+  storeCatOrder.splice(targetIdx, 0, moved);
+  storeSortDragIdx = null;
+  renderStoreSortList();
+}
+
+function resetStoreSort() {
+  storeCatOrder = [...DEFAULT_CAT_ORDER];
+  renderStoreSortList();
+}
+
+function applyStoreSort() {
+  toggleStoreSortPanel();
+  renderShopping();
+  toast('Indkøbsliste sorteret efter butiksgang ✓');
+}
+
+// ===== INIT =====
+function showSetupTab(tab) {
+  document.getElementById('setupTabDB').style.display   = tab === 'db'   ? 'block' : 'none';
+  document.getElementById('setupTabHost').style.display = tab === 'host' ? 'block' : 'none';
+  document.getElementById('tabSetupDB').style.background   = tab === 'db'   ? 'var(--terracotta)' : 'var(--cream)';
+  document.getElementById('tabSetupDB').style.color        = tab === 'db'   ? 'white' : 'var(--ink)';
+  document.getElementById('tabSetupDB').style.border       = tab === 'db'   ? 'none' : '1.5px solid var(--border)';
+  document.getElementById('tabSetupHost').style.background = tab === 'host' ? 'var(--terracotta)' : 'var(--cream)';
+  document.getElementById('tabSetupHost').style.color      = tab === 'host' ? 'white' : 'var(--ink)';
+  document.getElementById('tabSetupHost').style.border     = tab === 'host' ? 'none' : '1.5px solid var(--border)';
+}
+
+async function initApp() {
+  buildAvatarPicker('joinAvatarPicker', null, selectedLoginAvatar);
+  buildAvatarPicker('createAvatarPicker', null, selectedCreateAvatar);
+
+  const session = localStorage.getItem(localSessionKey);
+  if (session) {
+    try {
+      currentHousehold = JSON.parse(session);
+      // Verify the household still exists in DB
+      const row = await sbGet(currentHousehold.code);
+      if (!row) throw new Error('Husstand ikke fundet');
+      await loadHouseholdData();
+      enterApp();
+    } catch(e) {
+      // Don't clear session on network errors — only on missing household
+      if (e.message === 'Husstand ikke fundet') {
+        localStorage.removeItem(localSessionKey);
+      }
+      showLoginScreen();
+    }
+  } else {
+    showLoginScreen();
+  }
+}
+
+(function init() {
+  const url = localStorage.getItem(SB_URL_KEY) || 'https://qcfjnsfsdtybcvvgkgmj.supabase.co';
+  const key = localStorage.getItem(SB_KEY_KEY) || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFjZmpuc2ZzZHR5YmN2dmdrZ21qIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMzODkzNDYsImV4cCI6MjA4ODk2NTM0Nn0.QveWhOqB-HE5pCmCptklenODBgSsy0Vzxs1KuJ7tcrU';
+  localStorage.setItem(SB_URL_KEY, url);
+  localStorage.setItem(SB_KEY_KEY, key);
+  _sb = supabase.createClient(url, key);
+  initApp();
+})();
+</script>
+</body>
+</html>
