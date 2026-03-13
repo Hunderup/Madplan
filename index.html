@@ -1557,17 +1557,19 @@ create policy "open" on households for all using (true);</code>
         <!-- slots rendered by JS -->
       </div>
 
-      <!-- Add page buttons -->
+      <!-- Add page buttons — inputs wrapped inside labels for iOS Safari compatibility -->
       <div style="display:flex;gap:10px;margin-bottom:24px;flex-wrap:wrap">
-        <label for="cameraInput" class="btn btn-primary" style="cursor:pointer;display:inline-flex;align-items:center;gap:6px">📷 Tag billede</label>
-        <label for="galleryInput" class="btn btn-secondary" style="cursor:pointer;display:inline-flex;align-items:center;gap:6px">🖼️ Vælg fra galleri</label>
+        <label class="btn btn-primary" style="cursor:pointer;display:inline-flex;align-items:center;gap:6px">
+          📷 Tag billede
+          <input type="file" accept="image/*" capture="environment" onchange="handlePageAdd(event)" style="position:absolute;width:0;height:0;opacity:0;pointer-events:none">
+        </label>
+        <label class="btn btn-secondary" style="cursor:pointer;display:inline-flex;align-items:center;gap:6px">
+          🖼️ Vælg fra galleri
+          <input type="file" accept="image/*" multiple onchange="handlePageAdd(event)" style="position:absolute;width:0;height:0;opacity:0;pointer-events:none">
+        </label>
         <button class="btn btn-ghost" id="analyseBtn" onclick="analysePages()" style="display:none">✨ Analysér opskrift</button>
         <button class="btn btn-ghost" onclick="resetImport()">↺ Ryd</button>
       </div>
-
-      <!-- Hidden file inputs — must NOT be display:none on iOS -->
-      <input type="file" id="cameraInput" accept="image/*" capture="environment" onchange="handlePageAdd(event)" style="position:fixed;top:-9999px;left:-9999px;width:1px;height:1px;opacity:0">
-      <input type="file" id="galleryInput" accept="image/*" multiple onchange="handlePageAdd(event)" style="position:fixed;top:-9999px;left:-9999px;width:1px;height:1px;opacity:0">
 
       <div class="processing-state" id="processingState">
         <div class="spinner"></div>
@@ -1616,8 +1618,8 @@ create policy "open" on households for all using (true);</code>
         </div>
         <div>
           <label style="font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:var(--sage);display:block;margin-bottom:8px">Eller tag et billede</label>
-          <div class="fridge-photo-drop" id="fridgePhotoDrop" onclick="document.getElementById('fridgePhotoInput').click()">
-            <input type="file" id="fridgePhotoInput" accept="image/*" onchange="handleFridgePhoto(event)" style="display:none">
+          <label class="fridge-photo-drop" id="fridgePhotoDrop" style="cursor:pointer;display:block">
+            <input type="file" accept="image/*" capture="environment" onchange="handleFridgePhoto(event)" style="position:absolute;width:0;height:0;opacity:0;pointer-events:none">
             <div id="fridgePhotoPreview" style="display:none;width:100%;height:100%;position:relative">
               <img id="fridgePhotoImg" src="" style="width:100%;height:100%;object-fit:cover;border-radius:8px">
               <button onclick="clearFridgePhoto();event.stopPropagation()" style="position:absolute;top:6px;right:6px;background:rgba(0,0,0,0.5);color:white;border:none;border-radius:50%;width:24px;height:24px;cursor:pointer;font-size:14px">×</button>
@@ -1626,7 +1628,7 @@ create policy "open" on households for all using (true);</code>
               <div style="font-size:32px;margin-bottom:8px">📸</div>
               <div style="font-size:13px;color:var(--sage)">Klik for at tage billede af køleskabet</div>
             </div>
-          </div>
+          </label>
         </div>
       </div>
       <button class="btn btn-primary" onclick="getFridgeSuggestions()" style="width:100%;padding:14px">✨ Find retter jeg kan lave</button>
@@ -3198,19 +3200,6 @@ function generateShoppingList(allowedDays = null) {
 // ===== SCAN / IMPORT (multi-page) =====
 let scannedPages = []; // array of { dataUrl, base64, mediaType }
 const MAX_PAGES = 3;
-
-function triggerCamera() {
-  // iOS Safari requires the click to happen synchronously in a user gesture
-  const input = document.getElementById('cameraInput');
-  input.value = ''; // reset so same photo can be retaken
-  input.click();
-}
-
-function triggerGallery() {
-  const input = document.getElementById('galleryInput');
-  input.value = '';
-  input.click();
-}
 
 function renderPageSlots() {
   const container = document.getElementById('pageSlots');
