@@ -1361,7 +1361,9 @@
   data jsonb default '{}'
 );
 alter table households enable row level security;
-create policy "open" on households for all using (true);</code>
+create policy "allow_select" on households for select using (true);
+create policy "allow_insert" on households for insert with check (true);
+create policy "allow_update" on households for update using (true) with check (true);</code>
         </li>
       </ol>
       <input id="sbUrl" placeholder="https://xxxx.supabase.co" style="margin-top:8px">
@@ -1908,7 +1910,8 @@ async function sbGet(code) {
 
 async function sbUpsert(row) {
   const sb = getSupabase(); if (!sb) return;
-  await sb.from('households').upsert(row, { onConflict: 'code' });
+  const { error } = await sb.from('households').upsert(row, { onConflict: 'code' });
+  if (error) { console.error('sbUpsert error:', error); throw error; }
 }
 
 // ---- HOUSEHOLD DATA ----
@@ -3614,10 +3617,14 @@ function toggleStore(name) {
 
 async function saveStoreSettings() {
   householdShopDay = document.getElementById('hhShopDaySelect')?.value || '';
-  await sbUpsert({ code: currentHousehold.code, stores: householdStores, shop_day: householdShopDay });
-  renderShopping();
-  const label = householdStores.length ? householdStores.join(', ') : 'ingen butikker';
-  toast(`Butikker gemt: ${label}`);
+  try {
+    await sbUpsert({ code: currentHousehold.code, stores: householdStores, shop_day: householdShopDay });
+    renderShopping();
+    const label = householdStores.length ? householdStores.join(', ') : 'ingen butikker';
+    toast(`Butikker gemt: ${label}`);
+  } catch(e) {
+    toast('Fejl ved gemning: ' + e.message);
+  }
 }
 
 // ===== PRICE ESTIMATE (multi-store) =====
