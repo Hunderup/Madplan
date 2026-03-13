@@ -3823,7 +3823,15 @@ Du er en assistent der hjælper med at rense opskrifter. Analysér billedet/bill
 
   } catch(err) {
     clearInterval(interval);
-    document.getElementById('extractedRecipe').innerHTML = `<p style="color:var(--terracotta)">Fejl: ${err.message}. Prøv igen.</p>`;
+    const endpoint = getApiEndpoint();
+    const isProxy = !!getProxyUrl();
+    document.getElementById('extractedRecipe').innerHTML = `
+      <p style="color:var(--terracotta);font-weight:600">Fejl: ${err.message}</p>
+      <p style="font-size:12px;color:var(--sage);margin-top:6px">
+        Endpoint: ${endpoint}<br>
+        Bruger proxy: ${isProxy ? 'ja' : 'nej'}<br>
+        Tip: Tjek at proxy URL er gemt korrekt under profil → husstand
+      </p>`;
     document.getElementById('photoPreview').style.display = 'grid';
   } finally {
     document.getElementById('processingState').classList.remove('visible');
