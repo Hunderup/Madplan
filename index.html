@@ -1557,15 +1557,12 @@ create policy "open" on households for all using (true);</code>
         <!-- slots rendered by JS -->
       </div>
 
-      <!-- Add page buttons — inputs wrapped inside labels for iOS Safari compatibility -->
+      <!-- Buttons -->
       <div style="display:flex;gap:10px;margin-bottom:24px;flex-wrap:wrap">
-        <label class="btn btn-primary" style="cursor:pointer;display:inline-flex;align-items:center;gap:6px">
-          📷 Tag billede
-          <input type="file" accept="image/*" capture="environment" onchange="handlePageAdd(event)" style="position:absolute;width:0;height:0;opacity:0;pointer-events:none">
-        </label>
+        <button class="btn btn-primary" onclick="openCameraModal('scan')">📷 Tag billede</button>
         <label class="btn btn-secondary" style="cursor:pointer;display:inline-flex;align-items:center;gap:6px">
-          🖼️ Vælg fra galleri
-          <input type="file" accept="image/*" multiple onchange="handlePageAdd(event)" style="position:absolute;width:0;height:0;opacity:0;pointer-events:none">
+          🖼️ Galleri
+          <input type="file" accept="image/*" multiple onchange="handlePageAdd(event)" style="position:absolute;width:1px;height:1px;opacity:0;pointer-events:none">
         </label>
         <button class="btn btn-ghost" id="analyseBtn" onclick="analysePages()" style="display:none">✨ Analysér opskrift</button>
         <button class="btn btn-ghost" onclick="resetImport()">↺ Ryd</button>
@@ -1618,8 +1615,7 @@ create policy "open" on households for all using (true);</code>
         </div>
         <div>
           <label style="font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:var(--sage);display:block;margin-bottom:8px">Eller tag et billede</label>
-          <label class="fridge-photo-drop" id="fridgePhotoDrop" style="cursor:pointer;display:block">
-            <input type="file" accept="image/*" capture="environment" onchange="handleFridgePhoto(event)" style="position:absolute;width:0;height:0;opacity:0;pointer-events:none">
+          <div class="fridge-photo-drop" id="fridgePhotoDrop" onclick="openCameraModal('fridge')" style="cursor:pointer">
             <div id="fridgePhotoPreview" style="display:none;width:100%;height:100%;position:relative">
               <img id="fridgePhotoImg" src="" style="width:100%;height:100%;object-fit:cover;border-radius:8px">
               <button onclick="clearFridgePhoto();event.stopPropagation()" style="position:absolute;top:6px;right:6px;background:rgba(0,0,0,0.5);color:white;border:none;border-radius:50%;width:24px;height:24px;cursor:pointer;font-size:14px">×</button>
@@ -1628,7 +1624,7 @@ create policy "open" on households for all using (true);</code>
               <div style="font-size:32px;margin-bottom:8px">📸</div>
               <div style="font-size:13px;color:var(--sage)">Klik for at tage billede af køleskabet</div>
             </div>
-          </label>
+          </div>
         </div>
       </div>
       <button class="btn btn-primary" onclick="getFridgeSuggestions()" style="width:100%;padding:14px">✨ Find retter jeg kan lave</button>
@@ -2158,12 +2154,12 @@ function enterApp() {
 }
 
 async function openHouseholdModal() {
+  if (!currentHousehold) return;
   document.getElementById('hhModalName').textContent = currentHousehold.name;
   document.getElementById('hhModalCode').textContent = currentHousehold.code;
   const row = await sbGet(currentHousehold.code);
   if (row?.stores) householdStores = row.stores;
   if (row?.shop_day !== undefined) householdShopDay = row.shop_day;
-  // Render multi-store checkboxes
   renderStoreCheckboxes();
   document.getElementById('hhShopDaySelect').value = householdShopDay || '';
   const members = row?.members || [];
@@ -2176,7 +2172,8 @@ async function openHouseholdModal() {
       </div>
     </div>`
   ).join('');
-  openModal('householdModal');
+  // Open directly — do NOT call openModal() which would recurse
+  document.getElementById('householdModal').classList.add('open');
 }
 
 function copyCode() {
@@ -3197,6 +3194,89 @@ function generateShoppingList(allowedDays = null) {
 
 
 // ===== PHOTO IMPORT =====
+// ===== CAMERA MODAL =====
+let _cameraStream = null;
+let _cameraTarget = 'scan'; // 'scan' or 'fridge'
+let _cameraFacing = 'environment'; // 'environment' = back, 'user' = front
+
+async function openCameraModal(target) {
+  _cameraTarget = target;
+  _cameraFacing = 'environment';
+  document.getElementById('cameraTitle').textContent = target === 'fridge' ? 'Tag billede af køleskab' : 'Tag billede af opskrift';
+  document.getElementById('cameraModal').style.display = 'flex';
+  await startCamera();
+}
+
+async function startCamera() {
+  stopCamera();
+  try {
+    _cameraStream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: _cameraFacing, width: { ideal: 1920 }, height: { ideal: 1080 } },
+      audio: false
+    });
+    document.getElementById('cameraVideo').srcObject = _cameraStream;
+  } catch(e) {
+    closeCameraModal();
+    // Fallback to file input
+    if (_cameraTarget === 'scan') {
+      const inp = document.createElement('input');
+      inp.type = 'file'; inp.accept = 'image/*'; inp.capture = 'environment';
+      inp.onchange = handlePageAdd;
+      inp.click();
+    } else {
+      const inp = document.createElement('input');
+      inp.type = 'file'; inp.accept = 'image/*'; inp.capture = 'environment';
+      inp.onchange = handleFridgePhoto;
+      inp.click();
+    }
+  }
+}
+
+async function switchCamera() {
+  _cameraFacing = _cameraFacing === 'environment' ? 'user' : 'environment';
+  await startCamera();
+}
+
+function stopCamera() {
+  if (_cameraStream) {
+    _cameraStream.getTracks().forEach(t => t.stop());
+    _cameraStream = null;
+  }
+}
+
+function closeCameraModal() {
+  stopCamera();
+  document.getElementById('cameraModal').style.display = 'none';
+}
+
+function capturePhoto() {
+  const video = document.getElementById('cameraVideo');
+  const canvas = document.createElement('canvas');
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
+  canvas.getContext('2d').drawImage(video, 0, 0);
+  const dataUrl = canvas.toDataURL('image/jpeg', 0.92);
+  closeCameraModal();
+
+  if (_cameraTarget === 'fridge') {
+    fridgePhotoData = dataUrl;
+    document.getElementById('fridgePhotoImg').src = dataUrl;
+    document.getElementById('fridgePhotoPreview').style.display = 'block';
+    document.getElementById('fridgePhotoPlaceholder').style.display = 'none';
+  } else {
+    if (scannedPages.length < MAX_PAGES) {
+      scannedPages.push({
+        dataUrl,
+        base64: dataUrl.split(',')[1],
+        mediaType: 'image/jpeg'
+      });
+      renderPageSlots();
+    } else {
+      toast(`Maksimalt ${MAX_PAGES} sider`);
+    }
+  }
+}
+
 // ===== SCAN / IMPORT (multi-page) =====
 let scannedPages = []; // array of { dataUrl, base64, mediaType }
 const MAX_PAGES = 3;
@@ -3949,6 +4029,20 @@ async function initApp() {
   initApp();
 })();
 </script>
+<!-- CAMERA MODAL -->
+<div id="cameraModal" style="display:none;position:fixed;inset:0;z-index:1000;background:#000;flex-direction:column">
+  <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px;background:#000">
+    <span style="color:white;font-size:14px;font-weight:500" id="cameraTitle">Tag billede</span>
+    <button onclick="closeCameraModal()" style="background:none;border:none;color:white;font-size:28px;cursor:pointer;line-height:1">×</button>
+  </div>
+  <video id="cameraVideo" autoplay playsinline style="flex:1;width:100%;object-fit:cover"></video>
+  <div style="padding:24px;background:#000;display:flex;justify-content:center;gap:24px;align-items:center">
+    <button onclick="switchCamera()" style="background:rgba(255,255,255,0.15);border:none;border-radius:50%;width:48px;height:48px;color:white;font-size:20px;cursor:pointer">🔄</button>
+    <button onclick="capturePhoto()" style="background:white;border:4px solid #555;border-radius:50%;width:72px;height:72px;cursor:pointer;flex-shrink:0"></button>
+    <div style="width:48px"></div>
+  </div>
+</div>
+
 <nav id="bottomNav">
   <button class="active" onclick="showSection('plan')">
     <span class="nav-icon">📅</span>Madplan
