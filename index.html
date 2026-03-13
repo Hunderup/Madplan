@@ -1918,6 +1918,36 @@ create policy "allow_update" on households for update using (true) with check (t
         </div>
       </div>
 
+      <!-- AI API Settings -->
+      <div style="background:var(--warm-white);border:1.5px solid var(--border);border-radius:10px;padding:16px;margin-bottom:20px">
+        <div style="font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.6px;color:var(--moss);margin-bottom:10px">🤖 AI-indstillinger</div>
+
+        <div style="margin-bottom:14px">
+          <label style="font-size:12px;color:var(--sage);display:block;margin-bottom:6px;font-weight:600">Proxy URL <span style="font-weight:400">(anbefalet — deles af hele husstanden)</span></label>
+          <input id="hhProxyUrlInput" type="url" placeholder="https://madplan-proxy.dit-navn.workers.dev"
+            style="width:100%;border:1.5px solid var(--border);border-radius:8px;padding:8px 12px;font-size:13px;background:var(--cream);font-family:'DM Sans',sans-serif">
+          <p style="font-size:11px;color:var(--sage);margin-top:4px;line-height:1.5">Opret gratis Cloudflare Worker med den medfølgende <code>worker.js</code> fil.</p>
+        </div>
+
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
+          <div style="flex:1;height:1px;background:var(--border)"></div>
+          <span style="font-size:11px;color:var(--sage)">eller</span>
+          <div style="flex:1;height:1px;background:var(--border)"></div>
+        </div>
+
+        <div style="margin-bottom:12px">
+          <label style="font-size:12px;color:var(--sage);display:block;margin-bottom:6px;font-weight:600">Anthropic API-nøgle <span style="font-weight:400">(kun denne enhed)</span></label>
+          <input id="hhApiKeyInput" type="password" placeholder="sk-ant-..."
+            style="width:100%;border:1.5px solid var(--border);border-radius:8px;padding:8px 12px;font-size:13px;background:var(--cream);font-family:'DM Sans',sans-serif">
+          <p style="font-size:11px;color:var(--sage);margin-top:4px"><a href="https://console.anthropic.com" target="_blank" style="color:var(--terracotta)">Hent nøgle på console.anthropic.com →</a></p>
+        </div>
+
+        <div style="display:flex;align-items:center;gap:10px">
+          <button onclick="saveApiKey()" class="btn btn-primary btn-sm">Gem indstillinger</button>
+          <span id="apiKeyStatus" style="font-size:12px;color:var(--moss)"></span>
+        </div>
+      </div>
+
       <div style="margin-bottom:8px;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.6px;color:var(--moss)">Medlemmer</div>
       <div id="hhMembersList" style="display:flex;flex-direction:column;gap:8px;margin-bottom:20px"></div>
       <div style="border-top:1px solid var(--border);padding-top:16px;display:flex;gap:10px;flex-wrap:wrap">
@@ -2079,7 +2109,66 @@ let _realtimeChannel = null;
 
 const localSessionKey = 'hh_session';
 const localDataKey    = 'hh_local_data'; // offline cache
-const SB_URL_KEY = 'sb_url';
+const ANTHROPIC_KEY_KEY = 'anthropic_api_key';
+const PROXY_URL_KEY = 'anthropic_proxy_url';
+
+function getApiKey() {
+  return localStorage.getItem(ANTHROPIC_KEY_KEY) || '';
+}
+
+function getProxyUrl() {
+  return localStorage.getItem(PROXY_URL_KEY) || '';
+}
+
+// Returnerer den URL der skal kaldes — proxy hvis sat, ellers direkte
+function getApiEndpoint() {
+  const proxy = getProxyUrl();
+  return proxy || 'https://api.anthropic.com/v1/messages';
+}
+
+function saveApiKey() {
+  const key = document.getElementById('hhApiKeyInput').value.trim();
+  const statusEl = document.getElementById('apiKeyStatus');
+  if (key && !key.startsWith('sk-ant-')) {
+    statusEl.style.color = 'var(--terracotta)';
+    statusEl.textContent = 'Ugyldig nøgle — skal starte med sk-ant-';
+    return;
+  }
+  if (key) localStorage.setItem(ANTHROPIC_KEY_KEY, key);
+  else localStorage.removeItem(ANTHROPIC_KEY_KEY);
+
+  const proxyUrl = document.getElementById('hhProxyUrlInput')?.value.trim();
+  if (proxyUrl) localStorage.setItem(PROXY_URL_KEY, proxyUrl);
+  else localStorage.removeItem(PROXY_URL_KEY);
+
+  statusEl.style.color = 'var(--moss)';
+  statusEl.textContent = '✓ Gemt';
+  setTimeout(() => statusEl.textContent = getApiKey() ? '✓ API-nøgle gemt' : (getProxyUrl() ? '✓ Proxy URL gemt' : ''), 1500);
+}
+
+function buildApiHeaders() {
+  const key = getApiKey();
+  const proxy = getProxyUrl();
+  // Hvis proxy bruges sendes ingen API-nøgle (den ligger i Worker)
+  if (proxy) return { 'Content-Type': 'application/json' };
+  return {
+    'Content-Type': 'application/json',
+    'x-api-key': key,
+    'anthropic-version': '2023-06-01',
+    'anthropic-dangerous-direct-browser-access': 'true'
+  };
+}
+
+function checkAiReady() {
+  if (!getApiKey() && !getProxyUrl()) {
+    toast('⚠️ Opsæt AI under profil → husstand');
+    openModal('householdModal');
+    return false;
+  }
+  return true;
+}
+
+
 const SB_KEY_KEY = 'sb_key';
 
 function getSupabase() {
@@ -2461,6 +2550,15 @@ async function openHouseholdModal() {
   if (!currentHousehold) return;
   document.getElementById('hhModalName').textContent = currentHousehold.name;
   document.getElementById('hhModalCode').textContent = currentHousehold.code;
+  // Show saved AI settings
+  const savedKey = getApiKey();
+  const savedProxy = getProxyUrl();
+  document.getElementById('hhApiKeyInput').value = savedKey || '';
+  document.getElementById('hhApiKeyInput').placeholder = savedKey ? '••••••••••••••••' : 'sk-ant-...';
+  document.getElementById('hhProxyUrlInput').value = savedProxy || '';
+  const statusEl = document.getElementById('apiKeyStatus');
+  statusEl.textContent = savedProxy ? '✓ Proxy URL gemt' : (savedKey ? '✓ API-nøgle gemt' : '');
+  statusEl.style.color = 'var(--moss)';
   const row = await sbGet(currentHousehold.code);
   if (row?.stores) householdStores = row.stores;
   if (row?.shop_day !== undefined) householdShopDay = row.shop_day;
@@ -2476,7 +2574,6 @@ async function openHouseholdModal() {
       </div>
     </div>`
   ).join('');
-  // Open directly — do NOT call openModal() which would recurse
   document.getElementById('householdModal').classList.add('open');
 }
 
@@ -3630,6 +3727,7 @@ function handlePageAdd(event) {
 
 async function analysePages() {
   if (scannedPages.length === 0) { toast('Tilføj mindst ét billede'); return; }
+  if (!checkAiReady()) return;
 
   document.getElementById('processingState').classList.add('visible');
   document.getElementById('photoPreview').style.display = 'none';
@@ -3655,9 +3753,9 @@ async function analysePages() {
       { type: 'image', source: { type: 'base64', media_type: p.mediaType, data: p.base64 } }
     ])).flat();
 
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
+    const response = await fetch(getApiEndpoint(), {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: buildApiHeaders(),
       body: JSON.stringify({
         model: 'claude-sonnet-4-20250514',
         max_tokens: 1500,
@@ -3847,9 +3945,9 @@ async function getAISuggestions() {
   });
 
   try {
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
+    const response = await fetch(getApiEndpoint(), {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: buildApiHeaders(),
       body: JSON.stringify({
         model: 'claude-sonnet-4-20250514',
         max_tokens: 1000,
@@ -3920,6 +4018,7 @@ async function saveStoreSettings() {
 
 // ===== PRICE ESTIMATE (multi-store) =====
 async function openPriceEstimate() {
+  if (!checkAiReady()) return;
   const panel = document.getElementById('pricePanel');
   panel.style.display = 'block';
   panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
@@ -3966,9 +4065,9 @@ Svar KUN med JSON (ingen markdown, ingen forklaring):
   "savingTips": ["tip"]
 }`;
 
-    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+    const resp = await fetch(getApiEndpoint(), {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: buildApiHeaders(),
       body: JSON.stringify({
         model: 'claude-sonnet-4-20250514',
         max_tokens: 2000,
@@ -4169,6 +4268,7 @@ function clearFridgePhoto() {
 async function getFridgeSuggestions() {
   const text = document.getElementById('fridgeText').value.trim();
   if (!text && !fridgePhotoData) { toast('Skriv hvad du har, eller tag et billede'); return; }
+  if (!checkAiReady()) return;
 
   document.getElementById('fridgeProcessing').style.display = 'flex';
   document.getElementById('fridgeResults').innerHTML = '';
@@ -4193,9 +4293,9 @@ async function getFridgeSuggestions() {
 
     userContent.push({ type: 'text', text: prompt });
 
-    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+    const resp = await fetch(getApiEndpoint(), {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: buildApiHeaders(),
       body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 1000, messages: [{ role: 'user', content: userContent }] })
     });
     const data = await resp.json();
