@@ -800,6 +800,11 @@
     to { opacity: 1; transform: none; }
   }
 
+  @keyframes slideUp {
+    from { transform: translateY(100%); }
+    to { transform: translateY(0); }
+  }
+
   .modal-header {
     padding: 24px 28px 20px;
     border-bottom: 1px solid var(--border);
@@ -1145,7 +1150,150 @@
   @media (max-width: 600px) {
     .week-grid { grid-template-columns: 1fr 1fr; }
     .recipe-detail-grid { grid-template-columns: 1fr; }
-    .page-header { flex-direction: column; align-items: flex-start; gap: 12px; }
+    .page-header { flex-direction: column; align-items: flex-start; gap: 10px; }
+  }
+
+  /* ============================================
+     COMPREHENSIVE MOBILE DESIGN OVERHAUL
+     ============================================ */
+  @media (max-width: 700px) {
+
+    /* Layout & spacing */
+    main { padding: 16px 14px; }
+    .page-header { margin-bottom: 18px; padding-bottom: 12px; }
+    .page-header h1 { font-size: 26px; }
+
+    /* Buttons — bigger touch targets */
+    .btn { padding: 10px 14px; font-size: 13px; border-radius: 10px; }
+    .btn-sm { padding: 8px 12px; font-size: 12px; }
+
+    /* Week grid — single column on very small, 2 col otherwise */
+    .week-grid { grid-template-columns: 1fr 1fr; gap: 8px; }
+    .week-nav { margin-bottom: 14px; }
+    .week-label { font-size: 14px; }
+    .kcal-bar { padding: 12px 14px; gap: 12px; flex-wrap: wrap; }
+    .kcal-bar h4 { width: 100%; font-size: 12px; margin-bottom: 0; }
+    .kcal-item .num { font-size: 20px; }
+    .kcal-item .lbl { font-size: 10px; }
+
+    /* Day cards */
+    .day-card { min-height: 120px; border-radius: 10px; }
+    .day-header { padding: 6px 8px; }
+    .day-header .day-name { font-size: 11px; }
+    .day-header .date { font-size: 9px; }
+    .day-meals { padding: 6px 8px; gap: 4px; }
+    .meal-slot { padding: 5px 7px; font-size: 11px; border-radius: 6px; }
+    .meal-emoji { font-size: 14px; }
+    .meal-name { font-size: 10px; }
+
+    /* Recipe grid — single column */
+    .recipe-grid { grid-template-columns: 1fr; gap: 12px; }
+    .recipe-card { border-radius: 12px; }
+
+    /* Shopping categories — single column */
+    .shop-categories { grid-template-columns: 1fr; gap: 10px; }
+    .shop-cat-header { padding: 10px 14px; }
+    .shop-items { padding: 4px 0; }
+    .shop-item { padding: 10px 14px; min-height: 48px; }
+    .shop-item label { font-size: 14px; }
+    .shop-have-btn { padding: 5px 10px; font-size: 11px; }
+
+    /* Shopping toolbar */
+    .shop-toolbar { gap: 5px; }
+    .shop-tool-btn { min-width: 46px; padding: 7px 8px; }
+
+    /* Store info bar */
+    #shopStoreBar { flex-wrap: wrap; gap: 6px; }
+
+    /* Modals — full screen on mobile */
+    .modal {
+      width: 100% !important;
+      max-width: 100% !important;
+      max-height: 92vh;
+      border-radius: 20px 20px 0 0 !important;
+      margin: auto 0 0 0;
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      animation: slideUp 0.3s cubic-bezier(0.32, 0.72, 0, 1);
+    }
+    .modal-overlay { align-items: flex-end; padding: 0; }
+    .modal-overlay.open::before {
+      content: '';
+      display: block;
+      width: 36px; height: 4px;
+      background: rgba(0,0,0,0.15);
+      border-radius: 2px;
+      position: absolute;
+      top: calc(8vh);
+      left: 50%;
+      transform: translateX(-50%);
+    }
+    .modal-header { padding: 16px 18px 12px; }
+    .modal-header h2 { font-size: 18px; }
+
+    /* Form inputs — bigger on touch */
+    .form-row input, .form-row select, .form-row textarea {
+      font-size: 16px !important; /* prevents iOS zoom */
+      padding: 12px 14px;
+      border-radius: 10px;
+    }
+    .form-cols { grid-template-columns: 1fr; }
+
+    /* Recipe detail */
+    .recipe-detail-grid { grid-template-columns: 1fr; }
+    .portions-scaler { margin: 12px 0; }
+
+    /* Scan page slots */
+    #pageSlots { grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    .page-slot { border-radius: 10px; }
+
+    /* Fridge grid */
+    .fridge-grid { grid-template-columns: 1fr !important; }
+
+    /* Day picker */
+    #dayPickerGrid { grid-template-columns: repeat(4, 1fr) !important; gap: 6px; }
+    .day-pick-tile { padding: 8px 4px; font-size: 11px; }
+
+    /* Store sort */
+    .store-sort-panel { padding: 14px; }
+    .store-sort-row { padding: 8px 10px; font-size: 13px; }
+
+    /* Price panel */
+    #priceResults > div { grid-template-columns: 1fr !important; }
+
+    /* Madlog */
+    .madlog-week { margin-bottom: 20px; }
+    .madlog-grid { grid-template-columns: repeat(7, 1fr); gap: 3px; }
+    .madlog-day { padding: 4px 2px; }
+    .madlog-meal { font-size: 14px; }
+
+    /* Inspiration + fridge suggestion cards */
+    .fridge-suggestion-card, .inspiration-card { border-radius: 12px; padding: 14px; }
+
+    /* Member rows in household modal */
+    .member-row { padding: 10px 12px; }
+
+    /* Sort bar */
+    .sort-bar { gap: 5px; overflow-x: auto; flex-wrap: nowrap; padding-bottom: 4px; -webkit-overflow-scrolling: touch; }
+    .sort-btn { white-space: nowrap; flex-shrink: 0; padding: 6px 10px; font-size: 11px; }
+
+    /* Search bar */
+    .search-bar input { font-size: 16px !important; padding: 12px 14px; }
+
+    /* Header on mobile */
+    #headerHHName { display: none; } /* hide name, show only avatar */
+    .household-pill { padding: 5px 8px 5px 6px; }
+  }
+
+  /* Tiny phones */
+  @media (max-width: 380px) {
+    .week-grid { grid-template-columns: 1fr; }
+    main { padding: 12px 10px; }
+    .page-header h1 { font-size: 22px; }
+    #bottomNav button { font-size: 8px; }
+    #bottomNav button .nav-icon { font-size: 18px; }
   }
 
   /* EMPTY STATE */
