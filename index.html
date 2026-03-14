@@ -1923,23 +1923,13 @@ create policy "allow_update" on households for update using (true) with check (t
         <div style="font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.6px;color:var(--moss);margin-bottom:10px">🤖 AI-indstillinger</div>
 
         <div style="margin-bottom:14px">
-          <label style="font-size:12px;color:var(--sage);display:block;margin-bottom:6px;font-weight:600">Proxy URL <span style="font-weight:400">(anbefalet — deles af hele husstanden)</span></label>
-          <input id="hhProxyUrlInput" type="url" placeholder="https://madplan-proxy.dit-navn.workers.dev"
+          <label style="font-size:12px;color:var(--sage);display:block;margin-bottom:6px;font-weight:600">Proxy URL <span style="font-weight:400">(deles af hele husstanden)</span></label>
+          <input id="hhProxyUrlInput" type="url" placeholder="https://broad-meadow-ced8.mhunderup.workers.dev"
             style="width:100%;border:1.5px solid var(--border);border-radius:8px;padding:8px 12px;font-size:13px;background:var(--cream);font-family:'DM Sans',sans-serif">
-          <p style="font-size:11px;color:var(--sage);margin-top:4px;line-height:1.5">Opret gratis Cloudflare Worker med den medfølgende <code>worker.js</code> fil.</p>
-        </div>
-
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
-          <div style="flex:1;height:1px;background:var(--border)"></div>
-          <span style="font-size:11px;color:var(--sage)">eller</span>
-          <div style="flex:1;height:1px;background:var(--border)"></div>
-        </div>
-
-        <div style="margin-bottom:12px">
-          <label style="font-size:12px;color:var(--sage);display:block;margin-bottom:6px;font-weight:600">Anthropic API-nøgle <span style="font-weight:400">(kun denne enhed)</span></label>
-          <input id="hhApiKeyInput" type="password" placeholder="sk-ant-..."
-            style="width:100%;border:1.5px solid var(--border);border-radius:8px;padding:8px 12px;font-size:13px;background:var(--cream);font-family:'DM Sans',sans-serif">
-          <p style="font-size:11px;color:var(--sage);margin-top:4px"><a href="https://console.anthropic.com" target="_blank" style="color:var(--terracotta)">Hent nøgle på console.anthropic.com →</a></p>
+          <p style="font-size:11px;color:var(--sage);margin-top:4px;line-height:1.5">
+            Opdater Worker med den nye <code>worker.js</code> og tilføj <code>GEMINI_API_KEY</code> som secret.<br>
+            <a href="https://aistudio.google.com/apikey" target="_blank" style="color:var(--terracotta)">Hent gratis Gemini nøgle → aistudio.google.com/apikey</a>
+          </p>
         </div>
 
         <div style="display:flex;align-items:center;gap:10px">
@@ -2127,35 +2117,26 @@ function getApiEndpoint() {
 }
 
 function saveApiKey() {
-  const key = document.getElementById('hhApiKeyInput').value.trim();
   const statusEl = document.getElementById('apiKeyStatus');
-  if (key && !key.startsWith('sk-ant-')) {
-    statusEl.style.color = 'var(--terracotta)';
-    statusEl.textContent = 'Ugyldig nøgle — skal starte med sk-ant-';
-    return;
-  }
-  if (key) localStorage.setItem(ANTHROPIC_KEY_KEY, key);
-  else localStorage.removeItem(ANTHROPIC_KEY_KEY);
-
   const proxyUrl = document.getElementById('hhProxyUrlInput')?.value.trim();
+
   if (proxyUrl) {
     localStorage.setItem(PROXY_URL_KEY, proxyUrl);
-    // Test proxy med en minimal request
     statusEl.style.color = 'var(--sage)';
     statusEl.textContent = 'Tester proxy...';
     fetchWithTimeout(proxyUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 5, messages: [{ role: 'user', content: 'Hi' }] })
+      body: JSON.stringify({ model: 'gemini-1.5-flash', max_tokens: 5, messages: [{ role: 'user', content: 'Hi' }] })
     }, 10000)
     .then(r => r.json())
     .then(d => {
-      if (d.content || d.type === 'message') {
+      if (d.content) {
         statusEl.style.color = 'var(--moss)';
         statusEl.textContent = '✓ Proxy virker!';
       } else if (d.error) {
         statusEl.style.color = 'var(--terracotta)';
-        statusEl.textContent = 'Proxy fejl: ' + (d.error.message || JSON.stringify(d.error));
+        statusEl.textContent = 'Fejl: ' + d.error;
       } else {
         statusEl.style.color = 'var(--moss)';
         statusEl.textContent = '✓ Proxy gemt';
@@ -2163,12 +2144,12 @@ function saveApiKey() {
     })
     .catch(e => {
       statusEl.style.color = 'var(--terracotta)';
-      statusEl.textContent = e.name === 'AbortError' ? 'Proxy timeout — tjek URL' : 'Proxy fejl: ' + e.message;
+      statusEl.textContent = e.name === 'AbortError' ? 'Timeout — tjek URL' : 'Fejl: ' + e.message;
     });
   } else {
     localStorage.removeItem(PROXY_URL_KEY);
     statusEl.style.color = 'var(--moss)';
-    statusEl.textContent = key ? '✓ API-nøgle gemt' : '';
+    statusEl.textContent = '✓ Gemt';
   }
 }
 
@@ -2194,8 +2175,8 @@ function fetchWithTimeout(url, options, ms=30000) {
 }
 
 function checkAiReady() {
-  if (!getApiKey() && !getProxyUrl()) {
-    toast('⚠️ Opsæt AI under profil → husstand');
+  if (!getProxyUrl()) {
+    toast('⚠️ Opsæt AI-proxy under profil → husstand');
     openModal('householdModal');
     return false;
   }
@@ -2243,11 +2224,15 @@ async function saveSupabaseConfig() {
 
 async function sbGet(code) {
   const sb = getSupabase(); if (!sb) return null;
-  const { data, error } = await sb.from('households').select('*').eq('code', code).single();
+  // Timeout efter 8 sekunder så appen ikke hænger
+  const timeout = new Promise((_, reject) =>
+    setTimeout(() => reject(new Error('timeout')), 8000)
+  );
+  const query = sb.from('households').select('*').eq('code', code).single();
+  const { data, error } = await Promise.race([query, timeout]);
   if (error) {
-    // PGRST116 = no rows found (husstand eksisterer ikke)
     if (error.code === 'PGRST116') return undefined;
-    throw error; // netværksfejl — lad caller håndtere
+    throw error;
   }
   return data;
 }
@@ -2586,13 +2571,10 @@ async function openHouseholdModal() {
   document.getElementById('hhModalName').textContent = currentHousehold.name;
   document.getElementById('hhModalCode').textContent = currentHousehold.code;
   // Show saved AI settings
-  const savedKey = getApiKey();
   const savedProxy = getProxyUrl();
-  document.getElementById('hhApiKeyInput').value = savedKey || '';
-  document.getElementById('hhApiKeyInput').placeholder = savedKey ? '••••••••••••••••' : 'sk-ant-...';
   document.getElementById('hhProxyUrlInput').value = savedProxy || '';
   const statusEl = document.getElementById('apiKeyStatus');
-  statusEl.textContent = savedProxy ? '✓ Proxy URL gemt' : (savedKey ? '✓ API-nøgle gemt' : '');
+  statusEl.textContent = savedProxy ? '✓ Proxy URL gemt' : '';
   statusEl.style.color = 'var(--moss)';
   const row = await sbGet(currentHousehold.code);
   if (row?.stores) householdStores = row.stores;
@@ -4456,6 +4438,7 @@ async function initApp() {
 
       let row = null;
       let networkError = false;
+      setLoadingMsg('Forbinder til server...');
       try { row = await sbGet(currentHousehold.code); }
       catch(e) { networkError = true; }
 
@@ -4468,12 +4451,13 @@ async function initApp() {
       } else if (networkError) {
         hideLoadingOverlay();
         showLoginScreen();
-        toast('Ingen forbindelse til serveren');
+        toast('Ingen forbindelse — prøv igen');
       } else if (row === undefined) {
         localStorage.removeItem(localSessionKey);
         hideLoadingOverlay();
         showLoginScreen();
       } else {
+        setLoadingMsg('Henter madplan...');
         await loadHouseholdData();
         hideLoadingOverlay();
         enterApp();
