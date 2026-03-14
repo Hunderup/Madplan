@@ -2364,7 +2364,7 @@ function save() {
 }
 
 function setSyncState(state) {
-  const dot = document.getElementById('syncDot');
+  let dot = document.getElementById('syncDot');
   if (!dot) return;
   dot.className = 'sync-dot' + (state === 'syncing' ? ' syncing' : state === 'error' ? ' error' : '');
 }
@@ -3906,10 +3906,10 @@ function renderPageSlots() {
       </div>`;
     } else if (i === scannedPages.length) {
       // next available slot — clickable
-      html += `<div class="page-slot" onclick="triggerCamera()">
+      html += `<label class="page-slot" style="cursor:pointer"><input type="file" accept="image/*" capture="environment" onchange="handlePageAdd(event)" style="display:none">
         <div class="slot-num">${i + 1}</div>
         <div class="slot-label">Tryk for at tilføje</div>
-      </div>`;
+      </label>`;
     } else {
       html += `<div class="page-slot" style="opacity:0.35;cursor:default">
         <div class="slot-num">${i + 1}</div>
@@ -4528,7 +4528,7 @@ function clearFridgePhoto() {
   document.getElementById('fridgePhotoImg').src = '';
   document.getElementById('fridgePhotoPreview').style.display = 'none';
   document.getElementById('fridgePhotoPlaceholder').style.display = 'flex';
-  document.getElementById('fridgePhotoInput').value = '';
+  // fridgePhotoInput removed — using label/input approach
 }
 
 async function getFridgeSuggestions() {
