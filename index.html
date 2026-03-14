@@ -2232,7 +2232,7 @@ function buildApiHeaders() {
 }
 
 
-function fetchWithTimeout(url, options, ms=30000) {
+function fetchWithTimeout(url, options, ms=90000) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), ms);
   return fetch(url, { ...options, signal: controller.signal })
@@ -3928,7 +3928,7 @@ function removePage(idx) {
 }
 
 // Komprimér billede til max 1500px og ~1MB
-function compressImage(dataUrl, maxSize = 1500, quality = 0.82) {
+function compressImage(dataUrl, maxSize = 1024, quality = 0.75) {
   return new Promise(resolve => {
     const img = new Image();
     img.onload = () => {
@@ -3991,16 +3991,18 @@ async function analysePages() {
   document.getElementById('extractedRecipe').innerHTML = '';
 
   const statusTexts = [
-    'Analyserer billeder...',
+    'Sender billeder til AI...',
+    'Analyserer opskrift...',
     'Fjerner reklamer og irrelevant indhold...',
     'Udtrækker ingredienser...',
-    'Strukturerer opskriften...'
+    'Strukturerer opskriften...',
+    'Næsten færdig...',
   ];
   let statusIdx = 0;
   const interval = setInterval(() => {
     statusIdx = (statusIdx + 1) % statusTexts.length;
     document.getElementById('processingText').textContent = statusTexts[statusIdx];
-  }, 1800);
+  }, 4000);
 
   try {
     // Build content array — one image block per page
