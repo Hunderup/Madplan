@@ -3891,6 +3891,7 @@ Du er en assistent der hjælper med at rense opskrifter. Analysér billedet/bill
 
     document.getElementById('photoPreview').style.display = 'grid';
     document.getElementById('importActions').style.display = 'flex';
+    toast(`✓ Opskrift klar — tryk Gem for at gemme`);
 
   } catch(err) {
     clearInterval(interval);
@@ -3903,23 +3904,27 @@ Du er en assistent der hjælper med at rense opskrifter. Analysér billedet/bill
 }
 
 function saveImportedRecipe() {
-  if(!importedRecipeData) { toast('Ingen opskrift at gemme'); return; }
+  if (!importedRecipeData) {
+    toast('Ingen opskrift klar — scan og analysér først');
+    return;
+  }
   const r = {
     id: Date.now(),
     name: importedRecipeData.name || 'Importeret opskrift',
     emoji: importedRecipeData.emoji || '🍽️',
     category: importedRecipeData.category || 'Aftensmad',
     time: importedRecipeData.time || '?',
-    portions: importedRecipeData.portions || 4,
-    kcal: importedRecipeData.kcal || 200,
-    protein: importedRecipeData.protein || 10,
+    portions: Number(importedRecipeData.portions) || 4,
+    kcal: Number(importedRecipeData.kcal) || 200,
+    protein: Number(importedRecipeData.protein) || 10,
     tags: importedRecipeData.tags || ['importeret'],
     ingredients: importedRecipeData.ingredients || [],
-    steps: importedRecipeData.steps || []
+    steps: importedRecipeData.steps || [],
+    cookedDates: []
   };
   recipes.push(r);
   save();
-  toast(`"${r.name}" gemt som opskrift ✓`);
+  toast(`✓ "${r.name}" gemt i opskriftsbogen`);
   resetImport();
   showSection('recipes');
 }
