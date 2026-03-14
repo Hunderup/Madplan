@@ -3723,23 +3723,58 @@ function removePage(idx) {
   renderPageSlots();
 }
 
+// Komprimér billede til max 1500px og ~1MB
+function compressImage(dataUrl, maxSize = 1500, quality = 0.82) {
+  return new Promise(resolve => {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      let w = img.width, h = img.height;
+      // Skaler ned hvis større end maxSize
+      if (w > maxSize || h > maxSize) {
+        if (w > h) { h = Math.round(h * maxSize / w); w = maxSize; }
+        else { w = Math.round(w * maxSize / h); h = maxSize; }
+      }
+      canvas.width = w;
+      canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      resolve(canvas.toDataURL('image/jpeg', quality));
+    };
+    img.src = dataUrl;
+  });
+}
+
 function handlePageAdd(event) {
   const files = Array.from(event.target.files);
-  event.target.value = ''; // reset so same file can be re-added
+  event.target.value = '';
   const remaining = MAX_PAGES - scannedPages.length;
   files.slice(0, remaining).forEach(file => {
     const reader = new FileReader();
-    reader.onload = e => {
-      const dataUrl = e.target.result;
+    reader.onload = async e => {
+      const compressed = await compressImage(e.target.result);
       scannedPages.push({
-        dataUrl,
-        base64: dataUrl.split(',')[1],
-        mediaType: dataUrl.split(';')[0].split(':')[1]
+        dataUrl: compressed,
+        base64: compressed.split(',')[1],
+        mediaType: 'image/jpeg'
       });
       renderPageSlots();
     };
     reader.readAsDataURL(file);
   });
+}
+
+function handleFridgePhoto(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = async ev => {
+    const compressed = await compressImage(ev.target.result);
+    fridgePhotoData = compressed;
+    document.getElementById('fridgePhotoImg').src = compressed;
+    document.getElementById('fridgePhotoPreview').style.display = 'block';
+    document.getElementById('fridgePhotoPlaceholder').style.display = 'none';
+  };
+  reader.readAsDataURL(file);
 }
 
 async function analysePages() {
@@ -4278,19 +4313,6 @@ function renderMadlog() {
 
 // ===== FRIDGE SCANNER =====
 let fridgePhotoData = null;
-
-function handleFridgePhoto(e) {
-  const file = e.target.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = ev => {
-    fridgePhotoData = ev.target.result;
-    document.getElementById('fridgePhotoImg').src = fridgePhotoData;
-    document.getElementById('fridgePhotoPreview').style.display = 'block';
-    document.getElementById('fridgePhotoPlaceholder').style.display = 'none';
-  };
-  reader.readAsDataURL(file);
-}
 
 function clearFridgePhoto() {
   fridgePhotoData = null;
