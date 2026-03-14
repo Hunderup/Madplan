@@ -1923,7 +1923,7 @@ create policy "allow_update" on households for update using (true) with check (t
         <div style="font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.6px;color:var(--moss);margin-bottom:10px">🤖 AI-indstillinger</div>
         <div style="margin-bottom:14px">
           <label style="font-size:12px;color:var(--sage);display:block;margin-bottom:6px;font-weight:600">Proxy URL <span style="font-weight:400">(deles af hele husstanden)</span></label>
-          <input id="hhProxyUrlInput" type="url" placeholder="https://broad-meadow-ced8.mhunderup.workers.dev"
+          <input id="hhProxyUrlInput" type="url" placeholder="https://madplan.mhunderup.workers.dev"
             style="width:100%;border:1.5px solid var(--border);border-radius:8px;padding:8px 12px;font-size:13px;background:var(--cream);font-family:'DM Sans',sans-serif">
           <p style="font-size:11px;color:var(--sage);margin-top:4px;line-height:1.5">
             Opdater Worker med den nye <code>worker.js</code> og tilføj <code>ANTHROPIC_KEY</code> som secret.<br>
@@ -3815,7 +3815,10 @@ Du er en assistent der hjælper med at rense opskrifter. Analysér billedet/bill
     }
 
     const text = data.content?.[0]?.text || '';
-    if (!text) throw new Error('Tomt svar fra AI — prøv igen');
+    if (!text) {
+      // Vis hele svaret som debug
+      throw new Error('Tomt svar. Raw: ' + JSON.stringify(data).slice(0, 300));
+    }
 
     let parsed;
     try {
@@ -3854,15 +3857,8 @@ Du er en assistent der hjælper med at rense opskrifter. Analysér billedet/bill
 
   } catch(err) {
     clearInterval(interval);
-    const endpoint = getApiEndpoint();
-    const isProxy = !!getProxyUrl();
     document.getElementById('extractedRecipe').innerHTML = `
-      <p style="color:var(--terracotta);font-weight:600">Fejl: ${err.message}</p>
-      <p style="font-size:12px;color:var(--sage);margin-top:6px">
-        Endpoint: ${endpoint}<br>
-        Bruger proxy: ${isProxy ? 'ja' : 'nej'}<br>
-        Tip: Tjek at proxy URL er gemt korrekt under profil → husstand
-      </p>`;
+      <p style="color:var(--terracotta);font-weight:600">Fejl: ${err.message || JSON.stringify(err)}</p>`;
     document.getElementById('photoPreview').style.display = 'grid';
   } finally {
     document.getElementById('processingState').classList.remove('visible');
@@ -4493,8 +4489,9 @@ async function initApp() {
   localStorage.setItem(SB_KEY_KEY, key);
 
   // Sæt proxy URL som standard hvis ikke allerede gemt
-  // Opdater altid proxy URL til den nyeste adresse
-  localStorage.setItem(PROXY_URL_KEY, 'https://madplan.mhunderup.workers.dev');
+  // Sæt kun default proxy URL hvis ingen er gemt endnu
+  // Ret altid til den korrekte worker URL
+  localStorage.setItem(PROXY_URL_KEY, 'https://broad-meadow-ced8.mhunderup.workers.dev');
 
   _sb = supabase.createClient(url, key);
   initApp();
