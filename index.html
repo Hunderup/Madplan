@@ -3808,16 +3808,30 @@ Du er en assistent der hjælper med at rense opskrifter. Analysér billedet/bill
 
     clearInterval(interval);
     const data = await response.json();
+
+    // Håndter API-fejl
+    if (data.error) {
+      throw new Error(typeof data.error === 'string' ? data.error : (data.error.message || JSON.stringify(data.error)));
+    }
+
     const text = data.content?.[0]?.text || '';
+    if (!text) throw new Error('Tomt svar fra AI — prøv igen');
 
     let parsed;
     try {
-      parsed = JSON.parse(text.replace(/```json|```/g, '').trim());
+      // Prøv at finde JSON i svaret — selv hvis der er tekst omkring
+      const jsonMatch = text.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) throw new Error('Ingen JSON fundet');
+      parsed = JSON.parse(jsonMatch[0]);
       importedRecipeData = parsed;
     } catch {
+      // Vis det rå svar så vi kan se hvad Claude returnerede
       importedRecipeData = null;
       document.getElementById('photoPreview').style.display = 'grid';
-      document.getElementById('extractedRecipe').innerHTML = `<p style="color:var(--sage);font-size:13px">Kunne ikke parse automatisk. Her er det rensede indhold:</p><p style="margin-top:8px">${text.replace(/\n/g,'<br>')}</p>`;
+      document.getElementById('extractedRecipe').innerHTML = `
+        <p style="color:var(--sage);font-size:13px;margin-bottom:8px">Kunne ikke tolke svaret automatisk. Her er det Claude returnerede:</p>
+        <pre style="font-size:11px;background:var(--cream);padding:10px;border-radius:6px;overflow-x:auto;white-space:pre-wrap;line-height:1.5">${text.slice(0, 500)}</pre>
+        <button class="btn btn-ghost btn-sm" style="margin-top:10px" onclick="resetImport()">↺ Prøv igen</button>`;
       return;
     }
 
