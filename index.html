@@ -2134,10 +2134,12 @@ function saveApiKey() {
         statusEl.textContent = '✓ Proxy virker!';
       } else if (d.error) {
         statusEl.style.color = 'var(--terracotta)';
-        statusEl.textContent = 'Fejl: ' + d.error;
+        // Vis fejl uanset om det er string eller objekt
+        const msg = typeof d.error === 'string' ? d.error : (d.error.message || JSON.stringify(d.error));
+        statusEl.textContent = 'Fejl: ' + msg;
       } else {
-        statusEl.style.color = 'var(--moss)';
-        statusEl.textContent = '✓ Proxy gemt';
+        statusEl.style.color = 'var(--terracotta)';
+        statusEl.textContent = 'Uventet svar: ' + JSON.stringify(d).slice(0, 150);
       }
     })
     .catch(e => {
