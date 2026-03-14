@@ -1296,6 +1296,51 @@
     #bottomNav button .nav-icon { font-size: 18px; }
   }
 
+  /* Handle mode */
+  .shop-tool-handle { background: var(--ink) !important; color: var(--gold) !important; border-color: var(--ink) !important; }
+  .hm-store-tab {
+    flex-shrink: 0;
+    padding: 10px 16px;
+    background: none;
+    border: none;
+    color: #666;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    white-space: nowrap;
+    transition: all 0.15s;
+  }
+  .hm-store-tab.active { color: var(--gold); border-bottom-color: var(--gold); }
+  .hm-item {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 16px 14px;
+    background: var(--warm-white);
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    margin-bottom: 8px;
+    cursor: pointer;
+    transition: all 0.15s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .hm-item.checked { background: var(--light-sage); border-color: var(--sage); opacity: 0.6; }
+  .hm-item.checked .hm-name { text-decoration: line-through; color: var(--sage); }
+  .hm-checkbox {
+    width: 28px; height: 28px;
+    border: 2px solid var(--border);
+    border-radius: 8px;
+    flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px;
+    transition: all 0.15s;
+  }
+  .hm-item.checked .hm-checkbox { background: var(--moss); border-color: var(--moss); color: white; }
+  .hm-name { font-size: 17px; font-weight: 500; flex: 1; }
+  .hm-amount { font-size: 13px; color: var(--sage); }
+
   /* EMPTY STATE */
   .empty-state {
     text-align: center;
@@ -1598,7 +1643,7 @@ create policy "allow_update" on households for update using (true) with check (t
     <div class="page-header">
       <h1>Mine <em>Opskrifter</em></h1>
       <div style="display:flex;gap:10px">
-        <button class="btn btn-secondary" onclick="openModal('importModal')">📷 Scan opskrift</button>
+        <button class="btn btn-secondary" onclick="showSection('import')">📷 Scan opskrift</button>
         <button class="btn btn-primary" onclick="openModal('addRecipeModal')">+ Ny opskrift</button>
       </div>
     </div>
@@ -1689,6 +1734,24 @@ create policy "allow_update" on households for update using (true) with check (t
         <div class="spinner"></div><span id="priceProcessingText">Analyserer priser og søger tilbudsavis...</span>
       </div>
       <div id="priceResults"></div>
+    </div>
+
+    <!-- Hurtig tilføj -->
+    <div style="margin-top:20px;background:var(--warm-white);border:1.5px solid var(--border);border-radius:14px;padding:14px 16px">
+      <div style="font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:var(--sage);margin-bottom:10px">+ Tilføj vare</div>
+      <div style="display:flex;gap:8px">
+        <input id="quickAddInput" type="text" placeholder="f.eks. Mælk, 2 liter..." 
+          style="flex:1;border:1.5px solid var(--border);border-radius:10px;padding:10px 14px;font-size:16px;font-family:'DM Sans',sans-serif;background:var(--cream)"
+          onkeydown="if(event.key==='Enter')quickAddItem()">
+        <button onclick="quickAddItem()" style="background:var(--terracotta);color:white;border:none;border-radius:10px;padding:10px 18px;font-size:18px;cursor:pointer;font-weight:600">+</button>
+      </div>
+    </div>
+
+    <!-- Handle mode knap -->
+    <div style="margin-top:16px;margin-bottom:32px">
+      <button onclick="enterHandleMode()" style="width:100%;padding:16px;background:var(--ink);color:var(--gold);border:none;border-radius:14px;font-family:'Playfair Display',serif;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px">
+        🛍️ Start handle mode
+      </button>
     </div>
 
   </div><!-- /shopping -->
@@ -2709,7 +2772,140 @@ function showSection(id) {
   if(id === 'madlog') renderMadlog();
 }
 
-// ===== TOAST =====
+function quickAddItem() {
+  const input = document.getElementById('quickAddInput');
+  const name = input.value.trim();
+  if (!name) return;
+  // Prøv at udtrække mængde fra tekst, f.eks. "Mælk 2 liter"
+  shoppingList.push({
+    id: Date.now(),
+    name,
+    amount: '',
+    category: '🛒 Andet',
+    checked: false
+  });
+  save();
+  input.value = '';
+  renderShopping();
+  toast(`"${name}" tilføjet`);
+}
+
+// ===== HANDLE MODE =====
+let _hmWakeLock = null;
+let _hmActiveStore = null;
+
+async function enterHandleMode() {
+  const el = document.getElementById('handleMode');
+  el.style.display = 'flex';
+  document.getElementById('bottomNav').style.display = 'none';
+  document.querySelector('header').style.display = 'none';
+
+  // Wake lock — hold skærm vågen
+  try {
+    if ('wakeLock' in navigator) {
+      _hmWakeLock = await navigator.wakeLock.request('screen');
+    }
+  } catch(e) {}
+
+  renderHandleMode();
+}
+
+function exitHandleMode() {
+  document.getElementById('handleMode').style.display = 'none';
+  document.querySelector('header').style.display = '';
+  // Vis bundmenu igen hvis mobil
+  if (window.innerWidth <= 700) {
+    document.getElementById('bottomNav').style.display = 'flex';
+  }
+  if (_hmWakeLock) { _hmWakeLock.release(); _hmWakeLock = null; }
+  // Synk afkrydsninger tilbage til hovedlisten
+  renderShopping();
+}
+
+function renderHandleMode() {
+  const unchecked = shoppingList.filter(i => !i.checked);
+  const checked = shoppingList.filter(i => i.checked);
+  const total = shoppingList.length;
+  const doneCount = checked.length;
+
+  document.getElementById('hmProgress').textContent = `${doneCount} af ${total} varer`;
+
+  // Byg butiks-tabs — "Alle" + en per kategori der har varer
+  const cats = [...new Set(shoppingList.map(i => i.category || '🛒 Andet'))];
+  const tabs = document.getElementById('hmStoreTabs');
+
+  if (!_hmActiveStore) _hmActiveStore = 'alle';
+
+  tabs.innerHTML = [
+    { id: 'alle', label: '🛒 Alle' },
+    ...cats.map(c => ({ id: c, label: c }))
+  ].map(t => `
+    <button class="hm-store-tab ${_hmActiveStore === t.id ? 'active' : ''}"
+      onclick="_hmActiveStore='${t.id.replace(/'/g,"\\'")}';renderHandleMode()">
+      ${t.label}
+    </button>`
+  ).join('');
+
+  // Filtrer varer
+  const items = _hmActiveStore === 'alle'
+    ? shoppingList
+    : shoppingList.filter(i => (i.category || '🛒 Andet') === _hmActiveStore);
+
+  // Sorter: uafkrydsede først
+  const sorted = [...items].sort((a, b) => (a.checked ? 1 : 0) - (b.checked ? 1 : 0));
+
+  document.getElementById('hmItems').innerHTML = sorted.length === 0
+    ? `<div style="text-align:center;padding:60px 20px;color:var(--sage)">
+        <div style="font-size:48px;margin-bottom:12px">✓</div>
+        <div style="font-size:18px;font-weight:500">Alt er i kurven!</div>
+       </div>`
+    : sorted.map(item => `
+      <div class="hm-item ${item.checked ? 'checked' : ''}" onclick="hmToggle('${item.id}')">
+        <div class="hm-checkbox">${item.checked ? '✓' : ''}</div>
+        <div style="flex:1">
+          <div class="hm-name">${item.name}</div>
+          ${item.amount ? `<div class="hm-amount">${item.amount}</div>` : ''}
+        </div>
+        <div style="font-size:12px;color:var(--border)">${(item.category||'').split(' ')[0]}</div>
+      </div>`
+    ).join('');
+}
+
+function hmToggle(id) {
+  const item = shoppingList.find(i => i.id == id);
+  if (!item) return;
+  item.checked = !item.checked;
+  save();
+  renderHandleMode();
+}
+
+function hmAddItem() {
+  document.getElementById('hmAddBar').style.display = 'block';
+  document.getElementById('hmAddInput').value = '';
+  setTimeout(() => document.getElementById('hmAddInput').focus(), 100);
+}
+
+function hmCloseAdd() {
+  document.getElementById('hmAddBar').style.display = 'none';
+}
+
+function hmConfirmAdd() {
+  const name = document.getElementById('hmAddInput').value.trim();
+  if (!name) return;
+  shoppingList.push({
+    id: Date.now(),
+    name,
+    amount: '',
+    category: _hmActiveStore !== 'alle' ? _hmActiveStore : '🛒 Andet',
+    checked: false
+  });
+  save();
+  hmCloseAdd();
+  renderHandleMode();
+  toast(`"${name}" tilføjet`);
+}
+
+
 function toast(msg) {
   const t = document.getElementById('toast');
   t.textContent = msg;
@@ -4526,6 +4722,38 @@ async function initApp() {
   initApp();
 })();
 </script>
+<!-- HANDLE MODE OVERLAY -->
+<div id="handleMode" style="display:none;position:fixed;inset:0;z-index:300;background:var(--cream);flex-direction:column">
+
+  <!-- Header -->
+  <div style="background:var(--ink);padding:12px 16px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0">
+    <div style="display:flex;align-items:center;gap:10px">
+      <span style="font-family:'Playfair Display',serif;font-size:18px;color:var(--cream)">🛍️ Handle</span>
+      <span id="hmProgress" style="font-size:12px;color:#888"></span>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center">
+      <button onclick="hmAddItem()" style="background:var(--terracotta);color:white;border:none;border-radius:8px;padding:8px 14px;font-size:14px;cursor:pointer;font-family:'DM Sans',sans-serif">+ Tilføj</button>
+      <button onclick="exitHandleMode()" style="background:rgba(255,255,255,0.1);color:#ccc;border:none;border-radius:8px;padding:8px 14px;font-size:14px;cursor:pointer">✕ Afslut</button>
+    </div>
+  </div>
+
+  <!-- Store tabs -->
+  <div id="hmStoreTabs" style="display:flex;gap:0;background:var(--ink);border-top:1px solid rgba(255,255,255,0.08);overflow-x:auto;flex-shrink:0;-webkit-overflow-scrolling:touch"></div>
+
+  <!-- Items -->
+  <div id="hmItems" style="flex:1;overflow-y:auto;padding:12px 14px 100px"></div>
+
+  <!-- Quick add bar -->
+  <div id="hmAddBar" style="display:none;position:fixed;bottom:0;left:0;right:0;background:var(--warm-white);border-top:1.5px solid var(--border);padding:12px 14px;padding-bottom:calc(12px + env(safe-area-inset-bottom))">
+    <div style="display:flex;gap:8px">
+      <input id="hmAddInput" type="text" placeholder="Tilføj vare..." style="flex:1;border:1.5px solid var(--border);border-radius:10px;padding:12px 14px;font-size:16px;font-family:'DM Sans',sans-serif;background:var(--cream)">
+      <button onclick="hmConfirmAdd()" style="background:var(--terracotta);color:white;border:none;border-radius:10px;padding:12px 18px;font-size:16px;cursor:pointer">✓</button>
+      <button onclick="hmCloseAdd()" style="background:var(--border);color:var(--ink);border:none;border-radius:10px;padding:12px 14px;font-size:16px;cursor:pointer">✕</button>
+    </div>
+  </div>
+
+</div>
+
 <nav id="bottomNav">
   <button class="active" onclick="showSection('plan')">
     <span class="nav-icon">📅</span>Madplan
