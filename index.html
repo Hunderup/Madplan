@@ -1921,17 +1921,15 @@ create policy "allow_update" on households for update using (true) with check (t
       <!-- AI API Settings -->
       <div style="background:var(--warm-white);border:1.5px solid var(--border);border-radius:10px;padding:16px;margin-bottom:20px">
         <div style="font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.6px;color:var(--moss);margin-bottom:10px">🤖 AI-indstillinger</div>
-
         <div style="margin-bottom:14px">
           <label style="font-size:12px;color:var(--sage);display:block;margin-bottom:6px;font-weight:600">Proxy URL <span style="font-weight:400">(deles af hele husstanden)</span></label>
           <input id="hhProxyUrlInput" type="url" placeholder="https://broad-meadow-ced8.mhunderup.workers.dev"
             style="width:100%;border:1.5px solid var(--border);border-radius:8px;padding:8px 12px;font-size:13px;background:var(--cream);font-family:'DM Sans',sans-serif">
           <p style="font-size:11px;color:var(--sage);margin-top:4px;line-height:1.5">
-            Opdater Worker med den nye <code>worker.js</code> og tilføj <code>GEMINI_API_KEY</code> som secret.<br>
-            <a href="https://aistudio.google.com/apikey" target="_blank" style="color:var(--terracotta)">Hent gratis Gemini nøgle → aistudio.google.com/apikey</a>
+            Opdater Worker med den nye <code>worker.js</code> og tilføj <code>ANTHROPIC_KEY</code> som secret.<br>
+            <a href="https://platform.claude.com" target="_blank" style="color:var(--terracotta)">Hent nøgle på platform.claude.com →</a>
           </p>
         </div>
-
         <div style="display:flex;align-items:center;gap:10px">
           <button onclick="saveApiKey()" class="btn btn-primary btn-sm">Gem indstillinger</button>
           <span id="apiKeyStatus" style="font-size:12px;color:var(--moss)"></span>
@@ -2127,7 +2125,7 @@ function saveApiKey() {
     fetchWithTimeout(proxyUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ model: 'gemini-1.5-flash', max_tokens: 5, messages: [{ role: 'user', content: 'Hi' }] })
+      body: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 5, messages: [{ role: 'user', content: 'Hi' }] })
     }, 10000)
     .then(r => r.json())
     .then(d => {
@@ -4479,9 +4477,8 @@ async function initApp() {
   localStorage.setItem(SB_KEY_KEY, key);
 
   // Sæt proxy URL som standard hvis ikke allerede gemt
-  if (!localStorage.getItem(PROXY_URL_KEY)) {
-    localStorage.setItem(PROXY_URL_KEY, 'https://broad-meadow-ced8.mhunderup.workers.dev');
-  }
+  // Opdater altid proxy URL til den nyeste adresse
+  localStorage.setItem(PROXY_URL_KEY, 'https://madplan.mhunderup.workers.dev');
 
   _sb = supabase.createClient(url, key);
   initApp();
