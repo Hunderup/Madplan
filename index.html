@@ -2907,7 +2907,13 @@ function hmConfirmAdd() {
 
 
 function toast(msg) {
-  const t = document.getElementById('toast');
+  let t = document.getElementById('toast');
+  if (!t) {
+    t = document.createElement('div');
+    t.id = 'toast';
+    t.className = 'toast';
+    document.body.appendChild(t);
+  }
   t.textContent = msg;
   t.classList.add('show');
   setTimeout(() => t.classList.remove('show'), 2500);
@@ -4753,6 +4759,8 @@ async function initApp() {
   </div>
 
 </div>
+
+<div id="toast" class="toast"></div>
 
 <nav id="bottomNav">
   <button class="active" onclick="showSection('plan')">
