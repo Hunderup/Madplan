@@ -2039,6 +2039,42 @@ create policy "allow_update" on households for update using (true) with check (t
   </div>
 </div>
 
+<!-- Edit Recipe Modal -->
+<div class="modal-overlay" id="editRecipeModal">
+  <div class="modal" style="max-width:680px">
+    <div class="modal-header">
+      <h2>✏️ Rediger opskrift</h2>
+      <button class="modal-close" onclick="closeModal('editRecipeModal')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row"><label>Navn *</label><input id="edit_name" placeholder="Opskriftens navn"></div>
+      <div class="form-cols">
+        <div class="form-row"><label>Emoji</label><input id="edit_emoji" placeholder="🍝" maxlength="2"></div>
+        <div class="form-row"><label>Kategori</label>
+          <select id="edit_cat">
+            <option>Aftensmad</option><option>Frokost</option><option>Morgenmad</option><option>Snack</option><option>Dessert</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-cols">
+        <div class="form-row"><label>Tilberedningstid</label><input id="edit_time" placeholder="30 min"></div>
+        <div class="form-row"><label>Portioner</label><input id="edit_portions" type="number" min="1" placeholder="4"></div>
+      </div>
+      <div class="form-cols">
+        <div class="form-row"><label>Kcal pr. 100g</label><input id="edit_kcal" type="number" placeholder="220"></div>
+        <div class="form-row"><label>Protein pr. 100g (g)</label><input id="edit_protein" type="number" placeholder="12"></div>
+      </div>
+      <div class="form-row"><label>Ingredienser (én pr. linje)</label><textarea id="edit_ingredients" rows="6" placeholder="400g spaghetti&#10;300g hakket oksekød"></textarea></div>
+      <div class="form-row"><label>Fremgangsmåde (ét trin pr. linje)</label><textarea id="edit_steps" rows="6" placeholder="Kog pastaen al dente...&#10;Svits løg og kød..."></textarea></div>
+      <div class="form-row"><label>Tags (komma-adskilt)</label><input id="edit_tags" placeholder="hurtig, familie, pasta"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('editRecipeModal')">Annuller</button>
+      <button class="btn btn-primary" onclick="saveEditedRecipe()">💾 Gem ændringer</button>
+    </div>
+  </div>
+</div>
+
 <!-- Add Recipe Modal -->
 <div class="modal-overlay" id="addRecipeModal">
   <div class="modal">
@@ -2080,13 +2116,15 @@ create policy "allow_update" on households for update using (true) with check (t
   <div class="modal" style="max-width:780px">
     <div class="modal-header">
       <h2 id="det_title">Opskrift</h2>
-      <div style="display:flex;gap:8px;align-items:center">
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
         <button class="btn btn-ghost btn-sm" id="wakeLockBtn" onclick="toggleWakeLock()" title="Hold skærmen tændt mens du laver mad" style="display:none">☀️ Hold skærm vågen</button>
+        <button class="btn btn-ghost btn-sm" onclick="openEditRecipeModal()">✏️ Rediger</button>
         <button class="btn btn-secondary btn-sm" id="det_addToPlan" onclick="addDetailToPlan()">+ Tilføj til madplan</button>
         <button class="modal-close" onclick="closeModal('recipeDetailModal')">×</button>
       </div>
     </div>
     <div class="modal-body" id="det_body"></div>
+    <div style="height:60px"></div>
   </div>
 </div>
 
@@ -2657,6 +2695,45 @@ async function openHouseholdModal() {
     </div>`
   ).join('');
   document.getElementById('householdModal').classList.add('open');
+}
+
+function openEditRecipeModal() {
+  const r = recipes.find(r => r.id === currentDetailRecipeId);
+  if (!r) return;
+  document.getElementById('edit_name').value = r.name || '';
+  document.getElementById('edit_emoji').value = r.emoji || '';
+  document.getElementById('edit_cat').value = r.category || 'Aftensmad';
+  document.getElementById('edit_time').value = r.time || '';
+  document.getElementById('edit_portions').value = r.portions || 4;
+  document.getElementById('edit_kcal').value = r.kcal || '';
+  document.getElementById('edit_protein').value = r.protein || '';
+  document.getElementById('edit_ingredients').value = (r.ingredients || []).join('\n');
+  document.getElementById('edit_steps').value = (r.steps || []).join('\n');
+  document.getElementById('edit_tags').value = (r.tags || []).join(', ');
+  document.getElementById('editRecipeModal').classList.add('open');
+}
+
+function saveEditedRecipe() {
+  const r = recipes.find(r => r.id === currentDetailRecipeId);
+  if (!r) return;
+  const name = document.getElementById('edit_name').value.trim();
+  if (!name) { toast('Indtast et navn'); return; }
+  r.name       = name;
+  r.emoji      = document.getElementById('edit_emoji').value.trim() || '🍽️';
+  r.category   = document.getElementById('edit_cat').value;
+  r.time       = document.getElementById('edit_time').value.trim();
+  r.portions   = parseInt(document.getElementById('edit_portions').value) || 4;
+  r.kcal       = parseInt(document.getElementById('edit_kcal').value) || 0;
+  r.protein    = parseInt(document.getElementById('edit_protein').value) || 0;
+  r.ingredients = document.getElementById('edit_ingredients').value.split('\n').map(s=>s.trim()).filter(Boolean);
+  r.steps      = document.getElementById('edit_steps').value.split('\n').map(s=>s.trim()).filter(Boolean);
+  r.tags       = document.getElementById('edit_tags').value.split(',').map(s=>s.trim()).filter(Boolean);
+  save();
+  closeModal('editRecipeModal');
+  toast(`✓ "${r.name}" opdateret`);
+  // Genindlæs detail view
+  showRecipeDetail(r.id);
+  renderRecipes();
 }
 
 function openChangeCodeModal() {
