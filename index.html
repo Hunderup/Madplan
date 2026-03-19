@@ -806,11 +806,22 @@
   }
 
   .modal-header {
-    padding: 24px 28px 20px;
+    padding: 20px 28px 16px;
     border-bottom: 1px solid var(--border);
     display: flex;
     align-items: center;
     justify-content: space-between;
+    position: sticky;
+    top: 0;
+    background: var(--warm-white);
+    z-index: 2;
+    border-radius: 16px 16px 0 0;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  @media (max-width: 700px) {
+    .modal-header { border-radius: 20px 20px 0 0; padding: 16px 18px 12px; }
   }
 
   .modal-header h2 {
@@ -831,7 +842,7 @@
 
   .modal-close:hover { color: var(--terracotta); }
 
-  .modal-body { padding: 24px 28px 100px; }
+  .modal-body { padding: 20px 28px 24px; }
 
   .form-row { margin-bottom: 18px; }
 
@@ -867,11 +878,23 @@
   .form-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 
   .modal-footer {
-    padding: 20px 28px;
+    padding: 16px 28px;
     border-top: 1px solid var(--border);
     display: flex;
     gap: 10px;
     justify-content: flex-end;
+    position: sticky;
+    bottom: 0;
+    background: var(--warm-white);
+    z-index: 2;
+    border-radius: 0 0 16px 16px;
+  }
+
+  @media (max-width: 700px) {
+    .modal-footer {
+      padding: 14px 18px calc(14px + env(safe-area-inset-bottom));
+      border-radius: 0;
+    }
   }
 
   /* PHOTO IMPORT */
