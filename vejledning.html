@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kokkens Hjørne — Brugsvejledning</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --cream: #F7F3EC;
+    --ink: #1C1A17;
+    --moss: #4A5240;
+    --sage: #7A8C6E;
+    --terracotta: #C4622D;
+    --gold: #D4A853;
+    --border: #D9D0C0;
+    --light-sage: #E8EDE3;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'DM Sans', sans-serif; background: var(--cream); color: var(--ink); line-height: 1.7; }
+
+  /* COVER */
+  .cover {
+    background: var(--ink);
+    color: var(--cream);
+    padding: 80px 40px;
+    text-align: center;
+    border-bottom: 4px solid var(--terracotta);
+  }
+  .cover h1 { font-family: 'Playfair Display', serif; font-size: 48px; font-weight: 400; margin-bottom: 8px; }
+  .cover h1 span { color: var(--gold); font-style: italic; }
+  .cover p { color: #888; font-size: 16px; margin-top: 16px; }
+  .cover .subtitle { font-size: 20px; color: #ccc; margin-top: 8px; }
+
+  /* LAYOUT */
+  .container { max-width: 860px; margin: 0 auto; padding: 60px 32px; }
+
+  /* TOC */
+  .toc { background: white; border: 1.5px solid var(--border); border-radius: 16px; padding: 32px; margin-bottom: 60px; }
+  .toc h2 { font-family: 'Playfair Display', serif; font-size: 22px; margin-bottom: 20px; color: var(--moss); }
+  .toc ol { padding-left: 20px; }
+  .toc li { margin-bottom: 8px; }
+  .toc a { color: var(--terracotta); text-decoration: none; font-size: 15px; }
+  .toc a:hover { text-decoration: underline; }
+
+  /* SECTIONS */
+  .guide-section { margin-bottom: 70px; }
+  .guide-section h2 { font-family: 'Playfair Display', serif; font-size: 30px; font-weight: 400; margin-bottom: 6px; color: var(--ink); }
+  .guide-section h2 .num { color: var(--terracotta); font-style: italic; margin-right: 8px; }
+  .section-divider { height: 3px; background: linear-gradient(to right, var(--terracotta), transparent); border-radius: 2px; margin-bottom: 28px; }
+  .guide-section p { font-size: 15px; color: #444; margin-bottom: 14px; }
+  .guide-section h3 { font-size: 17px; font-weight: 600; color: var(--moss); margin: 24px 0 10px; }
+
+  /* STEPS */
+  .steps { display: flex; flex-direction: column; gap: 16px; margin: 20px 0; }
+  .step { display: flex; gap: 16px; align-items: flex-start; background: white; border: 1.5px solid var(--border); border-radius: 12px; padding: 16px 20px; }
+  .step-num { background: var(--terracotta); color: white; border-radius: 50%; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; flex-shrink: 0; margin-top: 2px; }
+  .step-content { flex: 1; }
+  .step-content strong { display: block; font-size: 15px; margin-bottom: 4px; }
+  .step-content span { font-size: 14px; color: #666; }
+
+  /* TIP BOX */
+  .tip { background: var(--light-sage); border-left: 4px solid var(--moss); border-radius: 0 10px 10px 0; padding: 14px 18px; margin: 20px 0; font-size: 14px; color: var(--moss); }
+  .tip strong { display: block; margin-bottom: 4px; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; }
+
+  /* MOCKUP SCREENS */
+  .mockup-wrap { margin: 28px 0; display: flex; justify-content: center; }
+  .mockup-wrap.two { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+  .mockup { background: #1C1A17; border-radius: 32px; padding: 12px; box-shadow: 0 20px 60px rgba(0,0,0,0.25); max-width: 300px; width: 100%; }
+  .mockup-screen { background: #F7F3EC; border-radius: 22px; overflow: hidden; }
+  .mockup-label { text-align: center; font-size: 12px; color: #888; margin-top: 10px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; }
+
+  /* FEATURE GRID */
+  .feature-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 20px 0; }
+  .feature-card { background: white; border: 1.5px solid var(--border); border-radius: 12px; padding: 18px 20px; }
+  .feature-card .icon { font-size: 28px; margin-bottom: 8px; }
+  .feature-card h4 { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
+  .feature-card p { font-size: 13px; color: #666; margin: 0; }
+
+  @media (max-width: 600px) {
+    .cover h1 { font-size: 32px; }
+    .container { padding: 40px 20px; }
+    .mockup-wrap.two { grid-template-columns: 1fr; }
+    .feature-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- COVER -->
+<div class="cover">
+  <div style="font-size:64px;margin-bottom:16px">🍳</div>
+  <h1>Kokkens <span>Hjørne</span></h1>
+  <div class="subtitle">Brugsvejledning</div>
+  <p>Alt du skal vide for at komme i gang med din digitale madplan</p>
+</div>
+
+<div class="container">
+
+  <!-- TOC -->
+  <div class="toc">
+    <h2>📋 Indhold</h2>
+    <ol>
+      <li><a href="#kom-i-gang">Kom i gang — Opret eller tilmeld husstand</a></li>
+      <li><a href="#madplan">Madplanen — Planlæg ugens måltider</a></li>
+      <li><a href="#opskrifter">Opskrifter — Tilføj og administrer opskrifter</a></li>
+      <li><a href="#scan">Scan opskrift — Importer fra bog eller avis</a></li>
+      <li><a href="#indkob">Indkøbslisten — Generer og brug din liste</a></li>
+      <li><a href="#handle">Handle Mode — Brug appen i butikken</a></li>
+      <li><a href="#koleskab">Køleskabstjek — Find retter med det du har</a></li>
+      <li><a href="#madlog">Madlog — Se hvad du har lavet</a></li>
+      <li><a href="#tips">Praktiske tips</a></li>
+    </ol>
+  </div>
+
+  <!-- 1. KOM I GANG -->
+  <div class="guide-section" id="kom-i-gang">
+    <h2><span class="num">1.</span> Kom i gang</h2>
+    <div class="section-divider"></div>
+    <p>Når du åbner Kokkens Hjørne for første gang, mødes du af login-skærmen. Her kan du enten <strong>oprette en ny husstand</strong> eller <strong>tilmelde dig en eksisterende</strong>.</p>
+
+    <div class="mockup-wrap">
+      <div>
+        <div class="mockup">
+          <div class="mockup-screen">
+            <svg viewBox="0 0 280 480" xmlns="http://www.w3.org/2000/svg">
+              <rect width="280" height="480" fill="#1C1A17"/>
+              <text x="140" y="80" font-family="serif" font-size="22" fill="#F7F3EC" text-anchor="middle">Kokkens</text>
+              <text x="140" y="106" font-family="serif" font-size="22" fill="#D4A853" font-style="italic" text-anchor="middle">Hjørne</text>
+              <text x="140" y="132" font-family="sans-serif" font-size="11" fill="#888" text-anchor="middle">Din digitale madplan</text>
+              <!-- Tabs -->
+              <rect x="20" y="155" width="115" height="38" rx="8" fill="#C4622D"/>
+              <text x="77" y="179" font-family="sans-serif" font-size="12" fill="white" text-anchor="middle" font-weight="bold">Tilmeld husstand</text>
+              <rect x="145" y="155" width="115" height="38" rx="8" fill="none" stroke="#444"/>
+              <text x="202" y="179" font-family="sans-serif" font-size="12" fill="#888" text-anchor="middle">Opret husstand</text>
+              <!-- Form -->
+              <text x="20" y="215" font-family="sans-serif" font-size="10" fill="#888">HUSSTANDS-KODE</text>
+              <rect x="20" y="222" width="240" height="36" rx="8" fill="#111" stroke="#333"/>
+              <text x="36" y="245" font-family="sans-serif" font-size="12" fill="#555">f.eks. JENSEN42</text>
+              <text x="20" y="278" font-family="sans-serif" font-size="10" fill="#888">DIT NAVN</text>
+              <rect x="20" y="285" width="240" height="36" rx="8" fill="#111" stroke="#333"/>
+              <text x="36" y="308" font-family="sans-serif" font-size="12" fill="#555">f.eks. Sofie</text>
+              <!-- Avatars -->
+              <text x="20" y="342" font-family="sans-serif" font-size="10" fill="#888">VÆLG AVATAR</text>
+              <text x="26" y="370" font-size="24">👨</text>
+              <text x="62" y="370" font-size="24">👩</text>
+              <text x="98" y="370" font-size="24">👦</text>
+              <text x="134" y="370" font-size="24">👧</text>
+              <text x="170" y="370" font-size="24">👴</text>
+              <text x="206" y="370" font-size="24">👵</text>
+              <!-- Button -->
+              <rect x="20" y="388" width="240" height="42" rx="9" fill="#C4622D"/>
+              <text x="140" y="414" font-family="sans-serif" font-size="13" fill="white" text-anchor="middle" font-weight="bold">Tilmeld husstand →</text>
+            </svg>
+          </div>
+        </div>
+        <div class="mockup-label">Login-skærm</div>
+      </div>
+    </div>
+
+    <h3>Opret ny husstand</h3>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-content"><strong>Tryk på "Opret husstand"</strong><span>Fanebladet skifter til oprettelsesformularen</span></div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-content"><strong>Skriv husstandens navn</strong><span>F.eks. "Familie Jensen" — det vises for alle medlemmer</span></div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-content"><strong>Skriv dit navn og vælg en avatar</strong><span>Vælg en emoji der repræsenterer dig</span></div>
+      </div>
+      <div class="step">
+        <div class="step-num">4</div>
+        <div class="step-content"><strong>Tryk "Opret husstand →"</strong><span>Du får vist en unik kode — <em>gem den!</em> Den bruges af andre familiemedlemmer</span></div>
+      </div>
+    </div>
+
+    <h3>Tilmeld dig en eksisterende husstand</h3>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-content"><strong>Tryk på "Tilmeld husstand"</strong><span>Det er standardvalget når du åbner appen</span></div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-content"><strong>Indtast husstands-koden</strong><span>F.eks. JENSEN42 — du får den af den person der oprettede husstanden</span></div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-content"><strong>Tryk "Søg →"</strong><span>Husstanden hentes og eksisterende medlemmer vises</span></div>
+      </div>
+      <div class="step">
+        <div class="step-num">4</div>
+        <div class="step-content"><strong>Vælg dit navn fra listen — eller tilmeld som ny</strong><span>Hvis du allerede er oprettet, tryk blot på dit navn. Ny bruger? Skriv dit navn og vælg avatar</span></div>
+      </div>
+    </div>
+
+    <div class="tip">
+      <strong>💡 Tip</strong>
+      Logger du ind på en ny enhed? Brug samme kode og tryk på dit eksisterende navn — alle dine data er gemt i skyen og hentes automatisk.
+    </div>
+  </div>
+
+  <!-- 2. MADPLAN -->
+  <div class="guide-section" id="madplan">
+    <h2><span class="num">2.</span> Madplanen</h2>
+    <div class="section-divider"></div>
+    <p>Madplanen er appens hjerte. Her planlægger du ugens måltider for hele familien — dag for dag.</p>
+
+    <div class="mockup-wrap">
+      <div>
+        <div class="mockup">
+          <div class="mockup-screen">
+            <svg viewBox="0 0 280 420" xmlns="http://www.w3.org/2000/svg">
+              <rect width="280" height="420" fill="#F7F3EC"/>
+              <!-- Header -->
+              <rect width="280" height="52" fill="#1C1A17"/>
+              <text x="16" y="32" font-family="serif" font-size="16" fill="#F7F3EC">Kokkens <tspan fill="#D4A853" font-style="italic">Hjørne</tspan></text>
+              <!-- Week nav -->
+              <rect x="0" y="52" width="280" height="36" fill="#F0EBE2"/>
+              <text x="20" y="75" font-size="18" fill="#1C1A17">←</text>
+              <text x="140" y="75" font-family="sans-serif" font-size="12" fill="#1C1A17" text-anchor="middle" font-weight="500">Uge 11, 2026</text>
+              <text x="260" y="75" font-size="18" fill="#1C1A17" text-anchor="end">→</text>
+              <!-- Day grid 2x3 -->
+              <rect x="8" y="96" width="82" height="90" rx="8" fill="white" stroke="#D9D0C0"/>
+              <rect x="8" y="96" width="82" height="22" rx="8" fill="#4A5240"/>
+              <text x="49" y="112" font-family="sans-serif" font-size="10" fill="white" text-anchor="middle" font-weight="600">MAN</text>
+              <text x="49" y="150" font-size="20" text-anchor="middle">🍝</text>
+              <text x="49" y="170" font-family="sans-serif" font-size="9" fill="#444" text-anchor="middle">Pasta Bolognese</text>
+
+              <rect x="99" y="96" width="82" height="90" rx="8" fill="white" stroke="#D9D0C0"/>
+              <rect x="99" y="96" width="82" height="22" rx="8" fill="#4A5240"/>
+              <text x="140" y="112" font-family="sans-serif" font-size="10" fill="white" text-anchor="middle" font-weight="600">TIR</text>
+              <text x="140" y="150" font-size="20" text-anchor="middle">🍛</text>
+              <text x="140" y="170" font-family="sans-serif" font-size="9" fill="#444" text-anchor="middle">Tikka Masala</text>
+
+              <rect x="190" y="96" width="82" height="90" rx="8" fill="white" stroke="#D9D0C0"/>
+              <rect x="190" y="96" width="82" height="22" rx="8" fill="#4A5240"/>
+              <text x="231" y="112" font-family="sans-serif" font-size="10" fill="white" text-anchor="middle" font-weight="600">ONS</text>
+              <text x="231" y="150" font-size="20" text-anchor="middle">+</text>
+              <text x="231" y="170" font-family="sans-serif" font-size="9" fill="#999" text-anchor="middle">Tilføj ret</text>
+
+              <rect x="8" y="194" width="82" height="90" rx="8" fill="white" stroke="#D9D0C0"/>
+              <rect x="8" y="194" width="82" height="22" rx="8" fill="#4A5240"/>
+              <text x="49" y="210" font-family="sans-serif" font-size="10" fill="white" text-anchor="middle" font-weight="600">TOR</text>
+              <text x="49" y="248" font-size="20" text-anchor="middle">🥗</text>
+              <text x="49" y="268" font-family="sans-serif" font-size="9" fill="#444" text-anchor="middle">Græsk Salat</text>
+
+              <rect x="99" y="194" width="82" height="90" rx="8" fill="white" stroke="#D9D0C0"/>
+              <rect x="99" y="194" width="82" height="22" rx="8" fill="#C4622D"/>
+              <text x="140" y="210" font-family="sans-serif" font-size="10" fill="white" text-anchor="middle" font-weight="600">FRE ⭐</text>
+              <text x="140" y="248" font-size="20" text-anchor="middle">🍕</text>
+              <text x="140" y="268" font-family="sans-serif" font-size="9" fill="#444" text-anchor="middle">Pizza</text>
+
+              <rect x="190" y="194" width="82" height="90" rx="8" fill="white" stroke="#D9D0C0"/>
+              <rect x="190" y="194" width="82" height="22" rx="8" fill="#4A5240"/>
+              <text x="231" y="210" font-family="sans-serif" font-size="10" fill="white" text-anchor="middle" font-weight="600">LØR</text>
+              <text x="231" y="248" font-size="20" text-anchor="middle">+</text>
+              <text x="231" y="268" font-family="sans-serif" font-size="9" fill="#999" text-anchor="middle">Tilføj ret</text>
+
+              <!-- Bottom nav -->
+              <rect x="0" y="380" width="280" height="40" fill="#1C1A17"/>
+              <text x="28" y="402" font-size="16" text-anchor="middle">📅</text>
+              <text x="84" y="402" font-size="16" text-anchor="middle">📖</text>
+              <text x="140" y="402" font-size="16" text-anchor="middle">🛒</text>
+              <text x="196" y="402" font-size="16" text-anchor="middle">📷</text>
+              <text x="252" y="402" font-size="16" text-anchor="middle">🧊</text>
+              <rect x="10" y="376" width="36" height="3" rx="1.5" fill="#C4622D"/>
+            </svg>
+          </div>
+        </div>
+        <div class="mockup-label">Madplan — ugeoversigt</div>
+      </div>
+    </div>
+
+    <h3>Sådan tilføjer du en ret</h3>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-content"><strong>Tryk på en dag i ugeplanen</strong><span>En dagtile med "+" er klar til at modtage en ret</span></div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-content"><strong>Vælg en opskrift fra listen</strong><span>Søg eller scroll for at finde den ret du vil tilføje</span></div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-content"><strong>Tryk "Tilføj ✓"</strong><span>Retten vises nu på den valgte dag</span></div>
+      </div>
+    </div>
+
+    <div class="tip">
+      <strong>💡 Tip — Næste uge</strong>
+      Brug pilene øverst til at navigere frem og tilbage mellem uger. Du kan planlægge flere uger frem i tid.
+    </div>
+
+    <div class="tip">
+      <strong>✨ Inspiration</strong>
+      Tryk på "✨ Inspiration"-knappen øverst for at få AI-forslag til retter du ikke har lavet i lang tid.
+    </div>
+  </div>
+
+  <!-- 3. OPSKRIFTER -->
+  <div class="guide-section" id="opskrifter">
+    <h2><span class="num">3.</span> Opskrifter</h2>
+    <div class="section-divider"></div>
+    <p>Under "📖 Opskrifter" finder du alle dine opskrifter. Du kan tilføje nye, redigere eksisterende og se detaljerne for hver ret.</p>
+
+    <h3>Tilføj en ny opskrift manuelt</h3>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-content"><strong>Tryk på "+ Ny opskrift"-kortet</strong><span>Det store kort med plusset i opskriftsoversigten</span></div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-content"><strong>Udfyld formularen</strong><span>Navn, emoji, kategori, tid, portioner, ingredienser og fremgangsmåde</span></div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-content"><strong>Tryk "💾 Gem opskrift"</strong><span>Opskriften gemmes og synkroniseres til alle familiemedlemmer</span></div>
+      </div>
+    </div>
+
+    <h3>Rediger en opskrift</h3>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-content"><strong>Tryk på opskriftskortet</strong><span>Opskriftens detaljer åbner i en modal</span></div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-content"><strong>Tryk "✏️ Rediger"</strong><span>Alle felter er udfyldt med den eksisterende information</span></div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-content"><strong>Foretag dine ændringer og tryk "💾 Gem ændringer"</strong><span>Opdateringen gemmes med det samme</span></div>
+      </div>
+    </div>
+
+    <div class="feature-grid">
+      <div class="feature-card">
+        <div class="icon">⭐</div>
+        <h4>Favoritter</h4>
+        <p>Retter du laver ofte vises automatisk i en guldsektion øverst</p>
+      </div>
+      <div class="feature-card">
+        <div class="icon">🛒</div>
+        <h4>Tilføj til indkøb</h4>
+        <p>Tryk "🛒 Tilføj til indkøbsliste" inde i en opskrift for at tilføje ingredienserne direkte</p>
+      </div>
+      <div class="feature-card">
+        <div class="icon">🍽️</div>
+        <h4>Portionsskalering</h4>
+        <p>Brug +/- knapperne til at skalere ingredienser op eller ned</p>
+      </div>
+      <div class="feature-card">
+        <div class="icon">☀️</div>
+        <h4>Skærm vågen</h4>
+        <p>Tryk "☀️ Hold skærm vågen" så telefonen ikke slukker mens du laver mad</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4. SCAN -->
+  <div class="guide-section" id="scan">
+    <h2><span class="num">4.</span> Scan opskrift</h2>
+    <div class="section-divider"></div>
+    <p>Under "📷 Scan" kan du fotografere en opskrift fra en bog, avis eller blad. AI'en renser den automatisk og fjerner reklamer og irrelevant indhold.</p>
+
+    <div class="mockup-wrap two">
+      <div>
+        <div class="mockup">
+          <div class="mockup-screen">
+            <svg viewBox="0 0 280 380" xmlns="http://www.w3.org/2000/svg">
+              <rect width="280" height="380" fill="#F7F3EC"/>
+              <rect width="280" height="52" fill="#1C1A17"/>
+              <text x="16" y="32" font-family="serif" font-size="14" fill="#F7F3EC">Scan <tspan fill="#D4A853" font-style="italic">Opskrift</tspan></text>
+              <!-- Slots -->
+              <rect x="16" y="68" width="76" height="90" rx="8" fill="white" stroke="#D9D0C0" stroke-dasharray="4"/>
+              <text x="54" y="118" font-size="28" text-anchor="middle">📷</text>
+              <text x="54" y="145" font-family="sans-serif" font-size="9" fill="#999" text-anchor="middle">Side 1</text>
+              <rect x="102" y="68" width="76" height="90" rx="8" fill="white" stroke="#D9D0C0" stroke-dasharray="4" opacity="0.5"/>
+              <text x="140" y="118" font-size="28" text-anchor="middle" opacity="0.4">2</text>
+              <rect x="188" y="68" width="76" height="90" rx="8" fill="white" stroke="#D9D0C0" stroke-dasharray="4" opacity="0.3"/>
+              <text x="226" y="118" font-size="28" text-anchor="middle" opacity="0.3">3</text>
+              <!-- Buttons -->
+              <rect x="16" y="172" width="120" height="38" rx="9" fill="#C4622D"/>
+              <text x="76" y="196" font-family="sans-serif" font-size="12" fill="white" text-anchor="middle">📷 Tag billede</text>
+              <rect x="144" y="172" width="120" height="38" rx="9" fill="white" stroke="#D9D0C0"/>
+              <text x="204" y="196" font-family="sans-serif" font-size="12" fill="#444" text-anchor="middle">🖼️ Galleri</text>
+              <!-- Analyse button -->
+              <rect x="16" y="222" width="248" height="38" rx="9" fill="#4A5240"/>
+              <text x="140" y="246" font-family="sans-serif" font-size="12" fill="white" text-anchor="middle">✨ Analysér opskrift</text>
+            </svg>
+          </div>
+        </div>
+        <div class="mockup-label">Scan — tag billeder</div>
+      </div>
+      <div>
+        <div class="mockup">
+          <div class="mockup-screen">
+            <svg viewBox="0 0 280 380" xmlns="http://www.w3.org/2000/svg">
+              <rect width="280" height="380" fill="#F7F3EC"/>
+              <rect width="280" height="52" fill="#1C1A17"/>
+              <text x="16" y="32" font-family="serif" font-size="14" fill="#F7F3EC">Scan <tspan fill="#D4A853" font-style="italic">Opskrift</tspan></text>
+              <text x="16" y="78" font-family="sans-serif" font-size="10" fill="#888" text-transform="uppercase">RENSET OPSKRIFT</text>
+              <text x="16" y="104" font-family="serif" font-size="16" fill="#1C1A17">🍝 Pasta Bolognese</text>
+              <text x="16" y="120" font-family="sans-serif" font-size="10" fill="#888">Aftensmad · 45 min · 4 port.</text>
+              <line x1="16" y1="132" x2="264" y2="132" stroke="#D9D0C0"/>
+              <text x="16" y="150" font-family="sans-serif" font-size="10" fill="#4A5240" font-weight="600">INGREDIENSER</text>
+              <text x="16" y="167" font-family="sans-serif" font-size="11" fill="#444">• 400g spaghetti</text>
+              <text x="16" y="183" font-family="sans-serif" font-size="11" fill="#444">• 300g hakket oksekød</text>
+              <text x="16" y="199" font-family="sans-serif" font-size="11" fill="#444">• 1 løg, 2 fed hvidløg</text>
+              <text x="16" y="215" font-family="sans-serif" font-size="11" fill="#444">• 400g tomater på dåse</text>
+              <text x="16" y="238" font-family="sans-serif" font-size="10" fill="#4A5240" font-weight="600">FREMGANGSMÅDE</text>
+              <text x="16" y="255" font-family="sans-serif" font-size="10" fill="#444">1. Kog pasta al dente...</text>
+              <text x="16" y="271" font-family="sans-serif" font-size="10" fill="#444">2. Svits løg og kød...</text>
+              <!-- Save button -->
+              <rect x="16" y="300" width="248" height="42" rx="9" fill="#C4622D"/>
+              <text x="140" y="326" font-family="sans-serif" font-size="13" fill="white" text-anchor="middle" font-weight="bold">💾 Gem opskrift</text>
+            </svg>
+          </div>
+        </div>
+        <div class="mockup-label">Scan — resultat</div>
+      </div>
+    </div>
+
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-content"><strong>Tryk "📷 Tag billede"</strong><span>Kameraet åbner — fotografér opskriftssiden tydeligt og i godt lys</span></div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-content"><strong>Tilføj flere sider om nødvendigt</strong><span>Du kan scanne op til 3 sider fra samme opskrift</span></div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-content"><strong>Tryk "✨ Analysér opskrift"</strong><span>AI'en analyserer billederne — det tager 20-60 sekunder</span></div>
+      </div>
+      <div class="step">
+        <div class="step-num">4</div>
+        <div class="step-content"><strong>Gennemse og tryk "💾 Gem opskrift"</strong><span>Opskriften gemmes i din opskriftsbog og deles med husstanden</span></div>
+      </div>
+    </div>
+
+    <div class="tip">
+      <strong>📸 Godt billede giver godt resultat</strong>
+      Sørg for godt lys, hold telefonen plant over siden, og undgå skygger. Teksten skal være tydelig og skarp.
+    </div>
+  </div>
+
+  <!-- 5. INDKØB -->
+  <div class="guide-section" id="indkob">
+    <h2><span class="num">5.</span> Indkøbslisten</h2>
+    <div class="section-divider"></div>
+    <p>Indkøbslisten genereres automatisk ud fra din madplan — eller du kan tilføje varer manuelt.</p>
+
+    <h3>Generer liste fra madplan</h3>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-content"><strong>Gå til "🛒 Indkøb"</strong><span>Tryk på indkøbsikonet i bundmenuen</span></div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-content"><strong>Tryk "🛒 Dage" i toolbaren</strong><span>Vælg hvilke dage du vil handle ind til</span></div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-content"><strong>Tryk "Tilføj til indkøbsliste →"</strong><span>Alle ingredienser fra de valgte dage tilføjes automatisk og sorteres i kategorier</span></div>
+      </div>
+    </div>
+
+    <h3>Tilføj varer manuelt</h3>
+    <p>Scroll ned til bunden af indkøbslisten — der er en hurtig tilføj-boks hvor du bare skriver varens navn og trykker "+".</p>
+
+    <div class="feature-grid">
+      <div class="feature-card">
+        <div class="icon">🏪</div>
+        <h4>Butiksgang</h4>
+        <p>Tryk "🏪 Gang" for at sortere listen efter din rute i butikken</p>
+      </div>
+      <div class="feature-card">
+        <div class="icon">💰</div>
+        <h4>Prisestimat</h4>
+        <p>Tryk "💰 Pris" for at få AI-estimat på listens pris</p>
+      </div>
+      <div class="feature-card">
+        <div class="icon">✓</div>
+        <h4>Ryd afkrydsede</h4>
+        <p>Tryk "✓ Ryd" for at fjerne alle afkrydsede varer fra listen</p>
+      </div>
+      <div class="feature-card">
+        <div class="icon">+</div>
+        <h4>Tilføj vare</h4>
+        <p>Tryk "+ Tilføj" i toolbaren for at tilføje en vare med kategori og mængde</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 6. HANDLE MODE -->
+  <div class="guide-section" id="handle">
+    <h2><span class="num">6.</span> Handle Mode</h2>
+    <div class="section-divider"></div>
+    <p>Når du er ude at handle, brug Handle Mode — en fuldskærmsvisning der er nem at bruge med én hånd i butikken.</p>
+
+    <div class="mockup-wrap">
+      <div>
+        <div class="mockup">
+          <div class="mockup-screen">
+            <svg viewBox="0 0 280 440" xmlns="http://www.w3.org/2000/svg">
+              <rect width="280" height="440" fill="#F7F3EC"/>
+              <!-- Header -->
+              <rect width="280" height="52" fill="#1C1A17"/>
+              <text x="16" y="32" font-family="sans-serif" font-size="15" fill="#F7F3EC" font-weight="600">🛍️ Handle</text>
+              <text x="180" y="30" font-family="sans-serif" font-size="11" fill="#888">2 af 8 varer</text>
+              <rect x="220" y="14" width="50" height="26" rx="6" fill="#C4622D"/>
+              <text x="245" y="31" font-family="sans-serif" font-size="11" fill="white" text-anchor="middle">+ Tilføj</text>
+              <!-- Category tabs -->
+              <rect x="0" y="52" width="280" height="36" fill="#111"/>
+              <text x="16" y="75" font-family="sans-serif" font-size="12" fill="#D4A853" font-weight="600">🛒 Alle</text>
+              <text x="76" y="75" font-family="sans-serif" font-size="12" fill="#666">🥩 Kød</text>
+              <text x="134" y="75" font-family="sans-serif" font-size="12" fill="#666">🥦 Grønt</text>
+              <text x="200" y="75" font-family="sans-serif" font-size="12" fill="#666">🥛 Mejeri</text>
+              <!-- Items -->
+              <rect x="12" y="100" width="256" height="60" rx="12" fill="white" stroke="#D9D0C0" stroke-width="1.5"/>
+              <rect x="24" y="116" width="28" height="28" rx="7" fill="#4A5240"/>
+              <text x="38" y="135" font-family="sans-serif" font-size="14" fill="white" text-anchor="middle" font-weight="700">✓</text>
+              <text x="65" y="126" font-family="sans-serif" font-size="15" fill="#888" font-weight="500" text-decoration="line-through">Spaghetti</text>
+              <text x="65" y="144" font-family="sans-serif" font-size="12" fill="#aaa">400g</text>
+
+              <rect x="12" y="170" width="256" height="60" rx="12" fill="white" stroke="#D9D0C0" stroke-width="1.5"/>
+              <rect x="24" y="186" width="28" height="28" rx="7" fill="none" stroke="#D9D0C0" stroke-width="2"/>
+              <text x="65" y="202" font-family="sans-serif" font-size="15" fill="#1C1A17" font-weight="500">Hakket oksekød</text>
+              <text x="65" y="220" font-family="sans-serif" font-size="12" fill="#888">300g</text>
+
+              <rect x="12" y="240" width="256" height="60" rx="12" fill="white" stroke="#D9D0C0" stroke-width="1.5"/>
+              <rect x="24" y="256" width="28" height="28" rx="7" fill="none" stroke="#D9D0C0" stroke-width="2"/>
+              <text x="65" y="272" font-family="sans-serif" font-size="15" fill="#1C1A17" font-weight="500">Løg</text>
+              <text x="65" y="290" font-family="sans-serif" font-size="12" fill="#888">2 stk.</text>
+
+              <rect x="12" y="310" width="256" height="60" rx="12" fill="white" stroke="#D9D0C0" stroke-width="1.5"/>
+              <rect x="24" y="326" width="28" height="28" rx="7" fill="none" stroke="#D9D0C0" stroke-width="2"/>
+              <text x="65" y="342" font-family="sans-serif" font-size="15" fill="#1C1A17" font-weight="500">Tomater på dåse</text>
+              <text x="65" y="360" font-family="sans-serif" font-size="12" fill="#888">400g</text>
+
+              <rect x="12" y="390" width="256" height="38" rx="9" fill="#1C1A17"/>
+              <text x="140" y="414" font-family="sans-serif" font-size="12" fill="#888" text-anchor="middle">✕ Afslut handle mode</text>
+            </svg>
+          </div>
+        </div>
+        <div class="mockup-label">Handle Mode</div>
+      </div>
+    </div>
+
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-content"><strong>Scroll til bunden af indkøbslisten</strong><span>Tryk på den mørke "🛍️ Start handle mode"-knap</span></div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-content"><strong>Skærmen fylder hele telefonen</strong><span>Header og bundmenu skjules — skærmen holdes automatisk vågen</span></div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-content"><strong>Tryk på en vare for at afkrydse den</strong><span>Store let-trykkelige felter — nemme at ramme med én hånd</span></div>
+      </div>
+      <div class="step">
+        <div class="step-num">4</div>
+        <div class="step-content"><strong>Brug kategori-fanerne øverst</strong><span>Skift mellem kategorier for at finde varerne hurtigere</span></div>
+      </div>
+      <div class="step">
+        <div class="step-num">5</div>
+        <div class="step-content"><strong>Tryk "✕ Afslut" når du er færdig</strong><span>Du vender tilbage til den normale indkøbsliste</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 7. KØLESKAB -->
+  <div class="guide-section" id="koleskab">
+    <h2><span class="num">7.</span> Køleskabstjek</h2>
+    <div class="section-divider"></div>
+    <p>Under "🧊 Køleskab" kan du fortælle AI'en hvad du har i køleskabet — og få forslag til retter du kan lave med det du har.</p>
+
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-content"><strong>Skriv ingredienser i tekstfeltet</strong><span>F.eks. "kylling, gulerødder, løg, kartofler"</span></div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-content"><strong>Eller tag et billede af køleskabet</strong><span>Tryk på kamera-boksen — AI'en analyserer billedet automatisk</span></div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-content"><strong>Tryk "✨ Find retter jeg kan lave"</strong><span>Du får en liste over retter sorteret efter match-procent</span></div>
+      </div>
+    </div>
+
+    <div class="tip">
+      <strong>💡 Tip</strong>
+      Retter fra din opskriftsbog fremhæves med et "✓ I din opskriftsbog"-mærke — så du nemt kan finde opskriften.
+    </div>
+  </div>
+
+  <!-- 8. MADLOG -->
+  <div class="guide-section" id="madlog">
+    <h2><span class="num">8.</span> Madlog</h2>
+    <div class="section-divider"></div>
+    <p>Madloggen viser en oversigt over hvad husstanden har lavet de seneste 12 uger — automatisk opdateret hver gang du tilføjer en ret til madplanen.</p>
+    <p>Du kan se hvilke retter der er lavet mest, og hvornår en ret sidst blev serveret. Favorit-retter (markeret med ⭐) er dem der er lavet oftest de seneste 30 dage.</p>
+  </div>
+
+  <!-- 9. TIPS -->
+  <div class="guide-section" id="tips">
+    <h2><span class="num">9.</span> Praktiske tips</h2>
+    <div class="section-divider"></div>
+
+    <h3>Installer appen på din hjemmeskærm</h3>
+    <p>Kokkens Hjørne kan installeres som en app direkte på din telefon — uden App Store.</p>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-content"><strong>På iPhone — Safari</strong><span>Tryk på Del-ikonet (☐↑) → "Føj til hjemmeskærm"</span></div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-content"><strong>På Android — Chrome</strong><span>Tryk på de tre prikker (⋮) → "Føj til startskærm"</span></div>
+      </div>
+    </div>
+
+    <h3>Del husstands-koden</h3>
+    <p>Tryk på dit profilbillede øverst → husstandsmodalen åbner → tryk "Kopiér" ved siden af koden. Send koden til dine familiemedlemmer — de kan tilmelde sig på deres egne enheder.</p>
+
+    <h3>Offline brug</h3>
+    <p>Appen gemmer automatisk en kopi af dine data lokalt. Hvis du mister internetforbindelsen, kan du stadig se og bruge din madplan og opskrifter. Ændringer synkroniseres automatisk når forbindelsen kommer tilbage.</p>
+
+    <h3>Skift husstands-kode</h3>
+    <p>Tryk på profilbilledet → "🔑 Skift kode" → skriv en ny kode og tryk "Skift kode →". Husk at fortælle alle familiemedlemmer den nye kode.</p>
+
+    <div class="tip">
+      <strong>🔒 Sikkerhed</strong>
+      Husstands-koden er adgangsnøglen til din madplan. Del den kun med folk du stoler på. Alle med koden kan se og redigere madplanen.
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <div style="border-top:2px solid var(--border);padding-top:32px;text-align:center;color:#888;font-size:13px;margin-top:20px">
+    <div style="font-family:'Playfair Display',serif;font-size:20px;color:var(--ink);margin-bottom:8px">Kokkens <em style="color:var(--terracotta)">Hjørne</em></div>
+    <p>God fornøjelse med din madplan 🍳</p>
+    <p style="margin-top:8px"><a href="https://hunderup.github.io/Madplan/" style="color:var(--terracotta)">hunderup.github.io/Madplan</a></p>
+  </div>
+
+</div>
+</body>
+</html>
