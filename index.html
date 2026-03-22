@@ -896,12 +896,21 @@
     background: var(--warm-white);
     z-index: 2;
     border-radius: 0 0 16px 16px;
+    flex-shrink: 0;
   }
 
   @media (max-width: 700px) {
     .modal-footer {
-      padding: 14px 18px calc(14px + env(safe-area-inset-bottom));
+      padding: 14px 18px;
+      padding-bottom: calc(20px + env(safe-area-inset-bottom));
       border-radius: 0;
+      /* Større knapper på mobil */
+    }
+    .modal-footer .btn {
+      padding: 14px 20px;
+      font-size: 15px;
+      flex: 1;
+      justify-content: center;
     }
   }
 
@@ -1240,11 +1249,11 @@
     .modal {
       width: 100% !important;
       max-width: 100% !important;
-      max-height: 95vh;
+      max-height: calc(95vh - 60px);
       border-radius: 20px 20px 0 0 !important;
       margin: auto 0 0 0;
       position: fixed;
-      bottom: 0;
+      bottom: calc(60px + env(safe-area-inset-bottom));
       left: 0;
       right: 0;
       animation: slideUp 0.3s cubic-bezier(0.32, 0.72, 0, 1);
