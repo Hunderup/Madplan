@@ -790,9 +790,17 @@
     width: 100%;
     max-width: 680px;
     max-height: 90vh;
-    overflow-y: auto;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
     box-shadow: 0 24px 60px rgba(0,0,0,0.25);
     animation: modalIn 0.25s ease;
+  }
+
+  .modal-body {
+    padding: 20px 28px 24px;
+    overflow-y: auto;
+    flex: 1;
   }
 
   @keyframes modalIn {
@@ -842,7 +850,7 @@
 
   .modal-close:hover { color: var(--terracotta); }
 
-  .modal-body { padding: 20px 28px 24px; }
+  /* modal-body defined in .modal flex block above */
 
   .form-row { margin-bottom: 18px; }
 
@@ -1232,7 +1240,7 @@
     .modal {
       width: 100% !important;
       max-width: 100% !important;
-      max-height: 92vh;
+      max-height: 95vh;
       border-radius: 20px 20px 0 0 !important;
       margin: auto 0 0 0;
       position: fixed;
@@ -1242,17 +1250,7 @@
       animation: slideUp 0.3s cubic-bezier(0.32, 0.72, 0, 1);
     }
     .modal-overlay { align-items: flex-end; padding: 0; }
-    .modal-overlay.open::before {
-      content: '';
-      display: block;
-      width: 36px; height: 4px;
-      background: rgba(0,0,0,0.15);
-      border-radius: 2px;
-      position: absolute;
-      top: calc(8vh);
-      left: 50%;
-      transform: translateX(-50%);
-    }
+    .modal-body { padding: 16px 18px 20px; }
     .modal-header { padding: 16px 18px 12px; }
     .modal-header h2 { font-size: 18px; }
 
@@ -2090,8 +2088,8 @@ create policy "allow_update" on households for update using (true) with check (t
         <div class="form-row"><label>Kcal pr. 100g</label><input id="edit_kcal" type="number" placeholder="220"></div>
         <div class="form-row"><label>Protein pr. 100g (g)</label><input id="edit_protein" type="number" placeholder="12"></div>
       </div>
-      <div class="form-row"><label>Ingredienser (én pr. linje)</label><textarea id="edit_ingredients" rows="6" placeholder="400g spaghetti&#10;300g hakket oksekød"></textarea></div>
-      <div class="form-row"><label>Fremgangsmåde (ét trin pr. linje)</label><textarea id="edit_steps" rows="6" placeholder="Kog pastaen al dente...&#10;Svits løg og kød..."></textarea></div>
+      <div class="form-row"><label>Ingredienser (én pr. linje)</label><textarea id="edit_ingredients" rows="4" placeholder="400g spaghetti&#10;300g hakket oksekød"></textarea></div>
+      <div class="form-row"><label>Fremgangsmåde (ét trin pr. linje)</label><textarea id="edit_steps" rows="4" placeholder="Kog pastaen al dente...&#10;Svits løg og kød..."></textarea></div>
       <div class="form-row"><label>Tags (komma-adskilt)</label><input id="edit_tags" placeholder="hurtig, familie, pasta"></div>
     </div>
     <div class="modal-footer">
@@ -2126,8 +2124,8 @@ create policy "allow_update" on households for update using (true) with check (t
         <div class="form-row"><label>Kcal pr. 100g</label><input id="r_kcal" placeholder="220" type="number"></div>
         <div class="form-row"><label>Protein pr. 100g (g)</label><input id="r_protein" placeholder="12" type="number"></div>
       </div>
-      <div class="form-row"><label>Ingredienser (én pr. linje, f.eks. "400g spaghetti")</label><textarea id="r_ingredients" rows="5" placeholder="400g spaghetti&#10;300g hakket oksekød&#10;1 løg&#10;2 fed hvidløg"></textarea></div>
-      <div class="form-row"><label>Fremgangsmåde</label><textarea id="r_steps" rows="5" placeholder="Kog pastaen al dente...&#10;Svits løg og kød..."></textarea></div>
+      <div class="form-row"><label>Ingredienser (én pr. linje, f.eks. "400g spaghetti")</label><textarea id="r_ingredients" rows="4" placeholder="400g spaghetti&#10;300g hakket oksekød&#10;1 løg&#10;2 fed hvidløg"></textarea></div>
+      <div class="form-row"><label>Fremgangsmåde</label><textarea id="r_steps" rows="4" placeholder="Kog pastaen al dente...&#10;Svits løg og kød..."></textarea></div>
       <div class="form-row"><label>Tags (komma-adskilt)</label><input id="r_tags" placeholder="hurtig, familie, pasta"></div>
     </div>
     <div class="modal-footer">
@@ -2896,82 +2894,125 @@ function quickAddItem() {
 // ===== HANDLE MODE =====
 let _hmWakeLock = null;
 let _hmActiveStore = null;
+let _hmPriceData = null; // Gemmer prisestimat-fordeling hvis kørt
 
 async function enterHandleMode() {
+  _hmActiveStore = null;
   const el = document.getElementById('handleMode');
   el.style.display = 'flex';
   document.getElementById('bottomNav').style.display = 'none';
   document.querySelector('header').style.display = 'none';
-
-  // Wake lock — hold skærm vågen
   try {
-    if ('wakeLock' in navigator) {
-      _hmWakeLock = await navigator.wakeLock.request('screen');
-    }
+    if ('wakeLock' in navigator) _hmWakeLock = await navigator.wakeLock.request('screen');
   } catch(e) {}
-
   renderHandleMode();
 }
 
 function exitHandleMode() {
   document.getElementById('handleMode').style.display = 'none';
   document.querySelector('header').style.display = '';
-  // Vis bundmenu igen hvis mobil
-  if (window.innerWidth <= 700) {
-    document.getElementById('bottomNav').style.display = 'flex';
-  }
+  if (window.innerWidth <= 700) document.getElementById('bottomNav').style.display = 'flex';
   if (_hmWakeLock) { _hmWakeLock.release(); _hmWakeLock = null; }
-  // Synk afkrydsninger tilbage til hovedlisten
   renderShopping();
 }
 
 function renderHandleMode() {
-  const unchecked = shoppingList.filter(i => !i.checked);
-  const checked = shoppingList.filter(i => i.checked);
   const total = shoppingList.length;
-  const doneCount = checked.length;
-
+  const doneCount = shoppingList.filter(i => i.checked).length;
   document.getElementById('hmProgress').textContent = `${doneCount} af ${total} varer`;
 
-  // Byg butiks-tabs — "Alle" + en per kategori der har varer
-  const cats = [...new Set(shoppingList.map(i => i.category || '🛒 Andet'))];
   const tabs = document.getElementById('hmStoreTabs');
 
-  if (!_hmActiveStore) _hmActiveStore = 'alle';
+  // --- Har vi prisestimat-data? ---
+  if (_hmPriceData && _hmPriceData.byStore) {
+    // BUTIKS-TILSTAND: tabs per butik + "Overalt"
+    const stores = Object.keys(_hmPriceData.byStore).filter(s => _hmPriceData.byStore[s].items?.length);
+    const allStores = [...stores, '🛒 Overalt'];
+    if (!_hmActiveStore) _hmActiveStore = allStores[0];
 
-  tabs.innerHTML = [
-    { id: 'alle', label: '🛒 Alle' },
-    ...cats.map(c => ({ id: c, label: c }))
-  ].map(t => `
-    <button class="hm-store-tab ${_hmActiveStore === t.id ? 'active' : ''}"
-      onclick="_hmActiveStore='${t.id.replace(/'/g,"\\'")}';renderHandleMode()">
-      ${t.label}
-    </button>`
-  ).join('');
+    tabs.innerHTML = allStores.map(s => `
+      <button class="hm-store-tab ${_hmActiveStore === s ? 'active' : ''}"
+        onclick="_hmActiveStore='${s.replace(/'/g,"\\'")}';renderHandleMode()">
+        ${s}${s !== '🛒 Overalt' ? ` <span style="font-size:10px;opacity:0.7">${_hmPriceData.byStore[s]?.total ? Math.round(_hmPriceData.byStore[s].total)+'kr' : ''}</span>` : ''}
+      </button>`).join('');
 
-  // Filtrer varer
-  const items = _hmActiveStore === 'alle'
-    ? shoppingList
-    : shoppingList.filter(i => (i.category || '🛒 Andet') === _hmActiveStore);
+    // Hvilke varer hører til denne butik?
+    let storeItems = [];
+    if (_hmActiveStore === '🛒 Overalt') {
+      // Varer der ikke er assigned til en butik
+      const assignedNames = (_hmPriceData.assignments || []).map(a => a.name.toLowerCase());
+      storeItems = shoppingList.filter(i => !assignedNames.includes(i.name.toLowerCase()));
+    } else {
+      const assignedHere = (_hmPriceData.byStore[_hmActiveStore]?.items || []).map(n => n.toLowerCase());
+      storeItems = shoppingList.filter(i => assignedHere.includes(i.name.toLowerCase()));
+    }
 
-  // Sorter: uafkrydsede først
-  const sorted = [...items].sort((a, b) => (a.checked ? 1 : 0) - (b.checked ? 1 : 0));
+    const sorted = [...storeItems].sort((a, b) => (a.checked ? 1 : 0) - (b.checked ? 1 : 0));
+    const uncheckedCount = storeItems.filter(i => !i.checked).length;
 
-  document.getElementById('hmItems').innerHTML = sorted.length === 0
-    ? `<div style="text-align:center;padding:60px 20px;color:var(--sage)">
-        <div style="font-size:48px;margin-bottom:12px">✓</div>
-        <div style="font-size:18px;font-weight:500">Alt er i kurven!</div>
-       </div>`
-    : sorted.map(item => `
-      <div class="hm-item ${item.checked ? 'checked' : ''}" onclick="hmToggle('${item.id}')">
-        <div class="hm-checkbox">${item.checked ? '✓' : ''}</div>
-        <div style="flex:1">
-          <div class="hm-name">${item.name}</div>
-          ${item.amount ? `<div class="hm-amount">${item.amount}</div>` : ''}
-        </div>
-        <div style="font-size:12px;color:var(--border)">${(item.category||'').split(' ')[0]}</div>
-      </div>`
-    ).join('');
+    document.getElementById('hmItems').innerHTML = `
+      ${_hmActiveStore !== '🛒 Overalt' && _hmPriceData.byStore[_hmActiveStore]?.total ? `
+        <div style="background:var(--ink);color:var(--gold);border-radius:12px;padding:12px 16px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center">
+          <span style="font-size:13px;opacity:0.8">Estimeret total</span>
+          <span style="font-family:'Playfair Display',serif;font-size:22px">${Math.round(_hmPriceData.byStore[_hmActiveStore].total)} <span style="font-size:14px">kr</span></span>
+        </div>` : ''}
+      ${sorted.length === 0
+        ? `<div style="text-align:center;padding:40px 20px;color:var(--sage)">
+            <div style="font-size:40px;margin-bottom:8px">✓</div>
+            <div style="font-size:16px">Ingen varer til ${_hmActiveStore}</div>
+           </div>`
+        : sorted.map(item => {
+            const assignment = (_hmPriceData.assignments || []).find(a => a.name.toLowerCase() === item.name.toLowerCase());
+            return `
+            <div class="hm-item ${item.checked ? 'checked' : ''}" onclick="hmToggle('${item.id}')">
+              <div class="hm-checkbox">${item.checked ? '✓' : ''}</div>
+              <div style="flex:1">
+                <div class="hm-name">${item.name}</div>
+                <div style="display:flex;gap:8px;align-items:center;margin-top:2px">
+                  ${item.amount ? `<span class="hm-amount">${item.amount}</span>` : ''}
+                  ${assignment?.price ? `<span style="font-size:12px;color:var(--terracotta);font-weight:600">${assignment.price} kr</span>` : ''}
+                  ${assignment?.onOffer ? `<span style="font-size:10px;background:var(--terracotta);color:white;padding:1px 6px;border-radius:10px">Tilbud</span>` : ''}
+                </div>
+                ${assignment?.reason ? `<div style="font-size:11px;color:var(--sage);margin-top:2px">${assignment.reason}</div>` : ''}
+              </div>
+            </div>`
+          }).join('')
+      }`;
+
+  } else {
+    // SIMPEL TILSTAND: tabs per kategori (ingen prisdata)
+    const cats = [...new Set(shoppingList.map(i => i.category || '🛒 Andet'))];
+    if (!_hmActiveStore) _hmActiveStore = 'alle';
+
+    tabs.innerHTML = [
+      { id: 'alle', label: '🛒 Alle' },
+      ...cats.map(c => ({ id: c, label: c }))
+    ].map(t => `
+      <button class="hm-store-tab ${_hmActiveStore === t.id ? 'active' : ''}"
+        onclick="_hmActiveStore='${t.id.replace(/'/g,"\\'")}';renderHandleMode()">
+        ${t.label}
+      </button>`).join('');
+
+    const items = _hmActiveStore === 'alle'
+      ? shoppingList
+      : shoppingList.filter(i => (i.category || '🛒 Andet') === _hmActiveStore);
+    const sorted = [...items].sort((a, b) => (a.checked ? 1 : 0) - (b.checked ? 1 : 0));
+
+    document.getElementById('hmItems').innerHTML = sorted.length === 0
+      ? `<div style="text-align:center;padding:60px 20px;color:var(--sage)">
+          <div style="font-size:48px;margin-bottom:12px">✓</div>
+          <div style="font-size:18px;font-weight:500">Alt er i kurven!</div>
+         </div>`
+      : sorted.map(item => `
+        <div class="hm-item ${item.checked ? 'checked' : ''}" onclick="hmToggle('${item.id}')">
+          <div class="hm-checkbox">${item.checked ? '✓' : ''}</div>
+          <div style="flex:1">
+            <div class="hm-name">${item.name}</div>
+            ${item.amount ? `<div class="hm-amount">${item.amount}</div>` : ''}
+          </div>
+          <div style="font-size:12px;color:var(--border)">${(item.category||'').split(' ')[0]}</div>
+        </div>`).join('');
+  }
 }
 
 function hmToggle(id) {
@@ -2999,7 +3040,7 @@ function hmConfirmAdd() {
     id: Date.now(),
     name,
     amount: '',
-    category: _hmActiveStore !== 'alle' ? _hmActiveStore : '🛒 Andet',
+    category: (_hmActiveStore && _hmActiveStore !== 'alle' && _hmActiveStore !== '🛒 Overalt') ? _hmActiveStore : '🛒 Andet',
     checked: false
   });
   save();
@@ -4416,37 +4457,65 @@ async function openPriceEstimate() {
   document.getElementById('priceProcessing').style.display = 'flex';
   document.getElementById('priceResults').innerHTML = '';
 
+  const storeList = householdStores.length ? householdStores : [];
+  const multiStore = storeList.length > 1;
+  const items = unchecked.map(i => i.name);
   const today = new Date().toLocaleDateString('da-DK', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
-  const itemList = unchecked.map(i => `- ${i.name}${i.amount ? ' (' + i.amount + ')' : ''}`).join('\n');
-  const storeList = householdStores.length ? householdStores : ['generisk dansk supermarked'];
-  const multiStore = householdStores.length > 1;
 
   try {
-    document.getElementById('priceProcessingText').textContent = 'Estimerer priser og søger tilbud...';
+    // TRIN 1: Hent realtids tilbud fra eTilbudsavis via Worker
+    document.getElementById('priceProcessingText').textContent = '📰 Henter aktuelle tilbudsaviser...';
+
+    let tilbudData = {}
+    try {
+      const tilbudResp = await fetchWithTimeout(getProxyUrl(), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'tilbud', items, stores: storeList })
+      }, 20000)
+      const tilbudJson = await tilbudResp.json()
+      tilbudData = tilbudJson.offers || {}
+    } catch(e) {
+      console.warn('Tilbudsavis fejlede, fortsætter uden:', e.message)
+    }
+
+    // Byg tilbuds-oversigt til Claude
+    const tilbudTekst = Object.entries(tilbudData).map(([item, offers]) => {
+      if (!offers || offers.length === 0) return `${item}: Ingen aktuelle tilbud fundet`
+      return `${item}:\n` + offers.map(o =>
+        `  - ${o.store}: ${o.priceText || 'pris ukendt'}${o.description ? ' (' + o.description + ')' : ''}${o.validUntil ? ' — gælder til ' + o.validUntil : ''}`
+      ).join('\n')
+    }).join('\n\n')
+
+    // TRIN 2: Send til Claude med realtids-data
+    document.getElementById('priceProcessingText').textContent = '🤖 Analyserer tilbud og finder den bedste fordeling...';
+
+    const itemList = unchecked.map(i => `- ${i.name}${i.amount ? ' (' + i.amount + ')' : ''}`).join('\n')
 
     const prompt = `Du er en dansk madbudget-ekspert (${today}).
 
 Indkøbsliste:
 ${itemList}
 
-Butikker: ${storeList.join(', ')}
+Butikker vi handler i: ${storeList.length ? storeList.join(', ') : 'ikke specificeret'}
 
-${multiStore ? `For HVER butik: estimer prisen på ALLE varer. Find derefter den billigste fordeling — dvs. for hver vare, hvilken butik er billigst? Fordel hele listen så den samlede pris minimeres (nogle varer købes i én butik, andre i en anden).
+AKTUELLE TILBUD FRA TILBUDSAVISERNE:
+${tilbudTekst || 'Ingen tilbudsdata tilgængelig — brug din generelle viden om danske priser'}
 
-Brug web_search til at finde aktuelle tilbudsaviser for ${storeList.join(' og ')}.` : `Estimer prisen på hver vare. Søg efter aktuelle tilbud i ${storeList[0]}.`}
+${multiStore ? `Opgave: Fordel indkøbene optimalt mellem butikkerne baseret på de faktiske tilbud ovenfor. For varer uden tilbud, estimer normalprisen baseret på din viden om danske supermarkedspriser.` : `Opgave: Vis tilbud og estimerede priser for alle varer i ${storeList[0] || 'butikken'}.`}
 
-Svar KUN med JSON (ingen markdown, ingen forklaring):
+Svar KUN med JSON (ingen markdown):
 {
   "stores": {
-    ${storeList.map(s => `"${s}": {"total": 0, "items": [{"name":"varenavn","price":0,"onOffer":false,"offerDesc":""}]}`).join(',\n    ')}
+    ${(storeList.length ? storeList : ['Generisk']).map(s => `"${s}": {"total": 0, "items": [{"name":"varenavn","price":0,"onOffer":false,"offerDesc":""}]}`).join(',\n    ')}
   },
   ${multiStore ? `"optimal": {
     "totalSaving": 0,
-    "assignments": [{"name":"varenavn","store":"butiksnavn","price":0,"reason":"billigst fordi...","onOffer":false}],
+    "assignments": [{"name":"varenavn","store":"butiksnavn","price":0,"reason":"tilbud/billigst","onOffer":false}],
     "byStore": {"Butik1": {"total":0,"items":["vare1"]}, "Butik2": {"total":0,"items":["vare2"]}}
   },` : ''}
   "cheaperAlternatives": [{"item":"dyr vare","alternative":"billigt alternativ","saving":"spar X kr"}],
-  "savingTips": ["tip"]
+  "savingTips": ["tip baseret på aktuelle tilbud"]
 }`;
 
     const resp = await fetchWithTimeout(getApiEndpoint(), {
@@ -4455,16 +4524,34 @@ Svar KUN med JSON (ingen markdown, ingen forklaring):
       body: JSON.stringify({
         model: 'claude-sonnet-4-20250514',
         max_tokens: 2000,
-        tools: [{ type: 'web_search_20250305', name: 'web_search' }],
         messages: [{ role: 'user', content: prompt }]
       })
     });
     const data = await resp.json();
+    if (data.error) throw new Error(typeof data.error === 'string' ? data.error : data.error.message || JSON.stringify(data.error));
     const text = data.content?.find(b => b.type === 'text')?.text || '{}';
-    const json = JSON.parse(text.replace(/```json|```/g, '').trim());
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    const json = JSON.parse(jsonMatch ? jsonMatch[0] : '{}');
 
     document.getElementById('priceProcessing').style.display = 'none';
-    renderPriceResults(json, multiStore, storeList);
+
+    // Gem til Handle Mode
+    if (json.optimal?.byStore) {
+      _hmPriceData = json.optimal;
+    }
+
+    // Vis kilde-info + handle mode knap
+    const hasRealData = Object.values(tilbudData).some(o => o && o.length > 0);
+    const sourceNote = hasRealData
+      ? `<div style="font-size:11px;color:var(--sage);margin-bottom:12px">📰 Baseret på aktuelle tilbudsaviser fra eTilbudsavis${storeList.length ? ' for ' + storeList.join(', ') : ''}</div>`
+      : `<div style="font-size:11px;color:var(--sage);margin-bottom:12px">⚠️ Ingen realtids-tilbud fundet — priser er estimerede</div>`;
+
+    const handleBtn = json.optimal?.byStore
+      ? `<button onclick="enterHandleMode()" style="width:100%;padding:14px;background:var(--ink);color:var(--gold);border:none;border-radius:12px;font-family:'Playfair Display',serif;font-size:17px;cursor:pointer;margin-bottom:16px;display:flex;align-items:center;justify-content:center;gap:8px">🛍️ Start handle mode med butiksfordeling</button>`
+      : '';
+
+    document.getElementById('priceResults').innerHTML = sourceNote + handleBtn;
+    renderPriceResults(json, multiStore, storeList.length ? storeList : ['Generisk']);
 
   } catch(e) {
     document.getElementById('priceProcessing').style.display = 'none';
