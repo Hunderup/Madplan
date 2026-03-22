@@ -87,6 +87,7 @@
       border-top: 1px solid rgba(255,255,255,0.08);
       z-index: 200;
       padding-bottom: env(safe-area-inset-bottom);
+      height: calc(58px + env(safe-area-inset-bottom));
     }
 
     #bottomNav button {
@@ -112,7 +113,7 @@
     #bottomNav button.active { color: var(--terracotta); }
     #bottomNav button.active .nav-icon { transform: scale(1.1); }
 
-    main { padding-bottom: calc(72px + env(safe-area-inset-bottom)); }
+    main { padding-bottom: calc(66px + env(safe-area-inset-bottom)); }
     header { padding: 0 16px; }
     header .logo { font-size: 18px; }
   }
@@ -1245,14 +1246,14 @@
     /* Store info bar */
     #shopStoreBar { flex-wrap: wrap; gap: 6px; }
 
-    /* Modals — full screen on mobile */
+    /* Modals — sidder præcist over bundmenuen */
     .modal {
       width: 100% !important;
       max-width: 100% !important;
-      max-height: calc(100vh - 80px - env(safe-area-inset-bottom));
+      max-height: calc(100vh - 58px - env(safe-area-inset-bottom) - 8px);
       border-radius: 20px 20px 0 0 !important;
       position: fixed;
-      bottom: calc(72px + env(safe-area-inset-bottom));
+      bottom: calc(58px + env(safe-area-inset-bottom));
       left: 0;
       right: 0;
       animation: slideUp 0.3s cubic-bezier(0.32, 0.72, 0, 1);
