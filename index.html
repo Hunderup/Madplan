@@ -2072,6 +2072,49 @@ create policy "allow_update" on households for update using (true) with check (t
   </div>
 </div>
 
+<!-- Share Recipe Modal -->
+<div class="modal-overlay" id="shareRecipeModal">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-header">
+      <h2>📤 Del opskrift</h2>
+      <button class="modal-close" onclick="closeModal('shareRecipeModal')">×</button>
+    </div>
+    <div class="modal-body">
+      <div id="shareRecipeName" style="background:var(--light-sage);border-radius:10px;padding:12px 16px;margin-bottom:20px;font-size:15px;font-weight:500;color:var(--moss)"></div>
+
+      <!-- Del via link -->
+      <div style="margin-bottom:20px">
+        <div style="font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:var(--moss);margin-bottom:10px">🔗 Del via link</div>
+        <p style="font-size:13px;color:var(--sage);margin-bottom:10px">Send et link — modtageren åbner det og kan importere opskriften med ét tryk.</p>
+        <button onclick="shareRecipeLink()" class="btn btn-primary" style="width:100%">📋 Kopiér delelink</button>
+        <button onclick="shareRecipeNative()" class="btn btn-secondary" style="width:100%;margin-top:8px">📱 Del via besked/mail</button>
+      </div>
+
+      <!-- Divider -->
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px">
+        <div style="flex:1;height:1px;background:var(--border)"></div>
+        <span style="font-size:12px;color:var(--sage)">eller</span>
+        <div style="flex:1;height:1px;background:var(--border)"></div>
+      </div>
+
+      <!-- Del via kode -->
+      <div>
+        <div style="font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:var(--moss);margin-bottom:10px">🏠 Send direkte til husstand</div>
+        <p style="font-size:13px;color:var(--sage);margin-bottom:10px">Opskriften kopieres direkte ind i den anden husstands opskriftsbog.</p>
+        <div class="form-row">
+          <label>Husstandskode</label>
+          <input id="shareTargetCode" placeholder="f.eks. HANSEN22" maxlength="12"
+            style="text-transform:uppercase;letter-spacing:2px;font-size:18px;font-family:'Playfair Display',serif"
+            oninput="this.value=this.value.toUpperCase().replace(/[^A-Z0-9]/g,'')">
+        </div>
+        <button onclick="confirmShareRecipe()" class="btn btn-primary" style="width:100%;margin-top:10px">Send til husstand →</button>
+      </div>
+
+      <div id="shareStatus" style="font-size:13px;margin-top:14px;min-height:20px"></div>
+    </div>
+  </div>
+</div>
+
 <!-- Edit Recipe Modal -->
 <div class="modal-overlay" id="editRecipeModal">
   <div class="modal" style="max-width:680px">
@@ -2151,6 +2194,7 @@ create policy "allow_update" on households for update using (true) with check (t
       <h2 id="det_title">Opskrift</h2>
       <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
         <button class="btn btn-ghost btn-sm" id="wakeLockBtn" onclick="toggleWakeLock()" title="Hold skærmen tændt mens du laver mad" style="display:none">☀️ Hold skærm vågen</button>
+        <button class="btn btn-ghost btn-sm" onclick="openShareRecipeModal()">📤 Del</button>
         <button class="btn btn-ghost btn-sm" onclick="openEditRecipeModal()">✏️ Rediger</button>
         <button class="btn btn-secondary btn-sm" id="det_addToPlan" onclick="addDetailToPlan()">+ Tilføj til madplan</button>
         <button class="modal-close" onclick="closeModal('recipeDetailModal')">×</button>
@@ -2768,6 +2812,199 @@ function saveEditedRecipe() {
   showRecipeDetail(r.id);
   renderRecipes();
 }
+
+function openShareRecipeModal() {
+  const r = recipes.find(r => r.id === currentDetailRecipeId);
+  if (!r) return;
+  document.getElementById('shareRecipeName').textContent = `${r.emoji || '🍽️'} ${r.name}`;
+  document.getElementById('shareTargetCode').value = '';
+  document.getElementById('shareStatus').textContent = '';
+  document.getElementById('shareRecipeModal').classList.add('open');
+}
+
+function getShareLink() {
+  const r = recipes.find(r => r.id === currentDetailRecipeId);
+  if (!r) return '';
+  // Koder opskriften som base64 i URL'en
+  const data = JSON.stringify({
+    name: r.name, emoji: r.emoji, category: r.category,
+    time: r.time, portions: r.portions, kcal: r.kcal, protein: r.protein,
+    tags: r.tags, ingredients: r.ingredients, steps: r.steps
+  });
+  const encoded = btoa(encodeURIComponent(data));
+  return `${location.origin}${location.pathname}?recipe=${encoded}`;
+}
+
+function shareRecipeLink() {
+  const link = getShareLink();
+  if (!link) return;
+  navigator.clipboard.writeText(link).then(() => {
+    const statusEl = document.getElementById('shareStatus');
+    statusEl.style.color = 'var(--moss)';
+    statusEl.textContent = '✓ Link kopieret til udklipsholder';
+    setTimeout(() => statusEl.textContent = '', 2000);
+  }).catch(() => {
+    document.getElementById('shareStatus').textContent = link;
+  });
+}
+
+function shareRecipeNative() {
+  const r = recipes.find(r => r.id === currentDetailRecipeId);
+  if (!r) return;
+  const link = getShareLink();
+  if (navigator.share) {
+    navigator.share({
+      title: `${r.emoji || '🍽️'} ${r.name} — Kokkens Hjørne`,
+      text: `Tjek denne opskrift: ${r.name}`,
+      url: link
+    }).catch(() => {});
+  } else {
+    shareRecipeLink(); // fallback til kopiér
+  }
+}
+
+// Tjek ved opstart om der er en opskrift i URL'en
+function checkIncomingRecipe() {
+  const params = new URLSearchParams(location.search);
+  const encoded = params.get('recipe');
+  if (!encoded) return;
+
+  try {
+    const data = JSON.parse(decodeURIComponent(atob(encoded)));
+    // Fjern recipe-parameteren fra URL så den ikke vises igen
+    history.replaceState(null, '', location.pathname);
+
+    // Vent til appen er klar
+    const tryImport = () => {
+      if (!currentHousehold) { setTimeout(tryImport, 500); return; }
+      showIncomingRecipe(data);
+    };
+    setTimeout(tryImport, 1000);
+  } catch(e) {
+    history.replaceState(null, '', location.pathname);
+  }
+}
+
+function showIncomingRecipe(data) {
+  // Vis modal med mulighed for at importere
+  const existing = recipes.find(r => r.name.toLowerCase() === data.name.toLowerCase());
+
+  const modal = document.createElement('div');
+  modal.className = 'modal-overlay open';
+  modal.style.zIndex = '500';
+  modal.innerHTML = `
+    <div class="modal" style="max-width:420px">
+      <div class="modal-header">
+        <h2>📥 Modtaget opskrift</h2>
+      </div>
+      <div class="modal-body">
+        <div style="background:var(--light-sage);border-radius:10px;padding:14px 16px;margin-bottom:16px">
+          <div style="font-size:18px;font-weight:600">${data.emoji || '🍽️'} ${data.name}</div>
+          <div style="font-size:13px;color:var(--sage);margin-top:4px">${data.category} · ${data.time} · ${data.portions} portioner</div>
+        </div>
+        ${existing
+          ? `<p style="color:var(--terracotta);font-size:13px">Du har allerede en opskrift med dette navn. Den vil blive overskrevet.</p>`
+          : `<p style="font-size:13px;color:var(--sage)">Vil du tilføje denne opskrift til din opskriftsbog?</p>`
+        }
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" onclick="this.closest('.modal-overlay').remove()">Afvis</button>
+        <button class="btn btn-primary" onclick="importIncomingRecipe(${JSON.stringify(JSON.stringify(data))}, this)">💾 Tilføj opskrift</button>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+}
+
+function importIncomingRecipe(dataStr, btn) {
+  const data = JSON.parse(dataStr);
+  // Fjern evt. eksisterende opskrift med samme navn
+  recipes = recipes.filter(r => r.name.toLowerCase() !== data.name.toLowerCase());
+  recipes.push({ ...data, id: Date.now(), cookedDates: [], tags: [...(data.tags || []), 'delt'] });
+  save();
+  btn.closest('.modal-overlay').remove();
+  toast(`✓ "${data.name}" tilføjet til opskriftsbogen`);
+  showSection('recipes');
+}
+
+
+async function confirmShareRecipe() {
+  const r = recipes.find(r => r.id === currentDetailRecipeId);
+  if (!r) return;
+
+  const code = document.getElementById('shareTargetCode').value.trim().toUpperCase();
+  const statusEl = document.getElementById('shareStatus');
+
+  if (code.length < 4) {
+    statusEl.style.color = 'var(--terracotta)';
+    statusEl.textContent = 'Indtast en gyldig husstandskode';
+    return;
+  }
+  if (code === currentHousehold.code) {
+    statusEl.style.color = 'var(--terracotta)';
+    statusEl.textContent = 'Det er din egen husstand — vælg en anden kode';
+    return;
+  }
+
+  statusEl.style.color = 'var(--sage)';
+  statusEl.textContent = 'Henter husstand...';
+
+  // Hent modtager-husstand
+  let targetRow;
+  try { targetRow = await sbGet(code); } catch(e) {
+    statusEl.style.color = 'var(--terracotta)';
+    statusEl.textContent = 'Netværksfejl — prøv igen';
+    return;
+  }
+
+  if (!targetRow) {
+    statusEl.style.color = 'var(--terracotta)';
+    statusEl.textContent = `Husstanden "${code}" blev ikke fundet`;
+    return;
+  }
+
+  statusEl.textContent = `Sender til ${targetRow.name}...`;
+
+  // Tilføj opskrift til modtager-husstandens data
+  const targetData = targetRow.data || {};
+  const targetRecipes = targetData.recipes || [];
+
+  // Tjek om opskriften allerede eksisterer
+  const exists = targetRecipes.some(tr =>
+    tr.name.toLowerCase() === r.name.toLowerCase()
+  );
+  if (exists) {
+    statusEl.style.color = 'var(--terracotta)';
+    statusEl.textContent = `"${r.name}" findes allerede hos ${targetRow.name}`;
+    return;
+  }
+
+  // Kopier opskriften med nyt ID
+  const sharedRecipe = {
+    ...r,
+    id: Date.now(),
+    cookedDates: [], // nulstil historik
+    tags: [...(r.tags || []), 'delt']
+  };
+
+  targetRecipes.push(sharedRecipe);
+  targetData.recipes = targetRecipes;
+
+  try {
+    const sb = getSupabase();
+    const { error } = await sb.from('households')
+      .update({ data: targetData })
+      .eq('code', code);
+    if (error) throw error;
+
+    statusEl.style.color = 'var(--moss)';
+    statusEl.textContent = `✓ "${r.name}" er sendt til ${targetRow.name}!`;
+    setTimeout(() => closeModal('shareRecipeModal'), 1500);
+  } catch(e) {
+    statusEl.style.color = 'var(--terracotta)';
+    statusEl.textContent = 'Fejl ved deling: ' + e.message;
+  }
+}
+
 
 function openChangeCodeModal() {
   document.getElementById('newCodeInput').value = '';
@@ -4926,6 +5163,7 @@ async function initApp() {
   localStorage.setItem(PROXY_URL_KEY, 'https://broad-meadow-ced8.mhunderup.workers.dev');
 
   _sb = supabase.createClient(url, key);
+  checkIncomingRecipe();
   initApp();
 })();
 </script>
